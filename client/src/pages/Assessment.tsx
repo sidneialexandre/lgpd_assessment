@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { trpc } from "@/lib/trpc";
+import { useState } from "react";
 import { QUESTIONS } from "@shared/questions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,31 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useLocation } from "wouter";
 
 export default function Assessment() {
-  const { user, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [assessmentId, setAssessmentId] = useState<number | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [result, setResult] = useState<{ totalScore: number; compliancePercentage: number } | null>(null);
-
-  const createAssessmentMutation = trpc.assessment.create.useMutation();
-  const saveAnswersMutation = trpc.assessment.saveAnswers.useMutation();
-
-  // Initialize assessment
-  useEffect(() => {
-    if (isAuthenticated && !assessmentId) {
-      createAssessmentMutation.mutate(undefined, {
-        onSuccess: (data) => {
-          if (data) {
-            setAssessmentId(data.id);
-          }
-        },
-      });
-    }
-  }, [isAuthenticated, assessmentId]);
 
   const currentQuestion = QUESTIONS[currentQuestionIndex];
   const answeredCount = Object.keys(answers).length;
@@ -59,63 +40,36 @@ export default function Assessment() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!assessmentId || answeredCount !== QUESTIONS.length) {
+  const handleSubmit = () => {
+    if (answeredCount !== QUESTIONS.length) {
       alert("Por favor, responda todas as questões antes de enviar.");
       return;
     }
 
-    setIsSubmitting(true);
-
-    const answersData = QUESTIONS.map((q) => {
+    // Calculate total score
+    let totalScore = 0;
+    QUESTIONS.forEach((q) => {
       const selectedAnswer = answers[q.id] as "A" | "B" | "C" | "D";
       const score = q.scores[selectedAnswer] || 0;
-      return {
-        questionId: q.id,
-        selectedAnswer,
-        score,
-      };
+      totalScore += score;
     });
 
-    saveAnswersMutation.mutate(
-      { assessmentId, answers: answersData },
-      {
-        onSuccess: (data) => {
-          if (data) {
-            setResult({
-              totalScore: data.totalScore,
-              compliancePercentage: data.compliancePercentage,
-            });
-            setIsCompleted(true);
-          }
-          setIsSubmitting(false);
-        },
-        onError: () => {
-          alert("Erro ao salvar as respostas. Tente novamente.");
-          setIsSubmitting(false);
-        },
-      }
-    );
+    const compliancePercentage = Math.round((totalScore / 10000) * 100);
+
+    setResult({
+      totalScore,
+      compliancePercentage,
+    });
+    setIsCompleted(true);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Acesso Necessário</CardTitle>
-            <CardDescription>Você precisa estar autenticado para acessar a avaliação.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">Por favor, faça login para continuar.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (isCompleted && result) {
-    return <ResultPage result={result} />;
+    return <ResultPage result={result} onRestart={() => {
+      setCurrentQuestionIndex(0);
+      setAnswers({});
+      setIsCompleted(false);
+      setResult(null);
+    }} />;
   }
 
   return (
@@ -253,10 +207,10 @@ export default function Assessment() {
                 {currentQuestionIndex === QUESTIONS.length - 1 ? (
                   <Button
                     onClick={handleSubmit}
-                    disabled={answeredCount !== QUESTIONS.length || isSubmitting}
+                    disabled={answeredCount !== QUESTIONS.length}
                     className="bg-green-600 hover:bg-green-700"
                   >
-                    {isSubmitting ? "Enviando..." : "Enviar Avaliação"}
+                    Enviar Avaliação
                   </Button>
                 ) : (
                   <Button onClick={handleNextQuestion}>
@@ -284,8 +238,10 @@ export default function Assessment() {
 
 function ResultPage({
   result,
+  onRestart,
 }: {
   result: { totalScore: number; compliancePercentage: number };
+  onRestart: () => void;
 }) {
   const getComplianceLevel = (percentage: number) => {
     if (percentage >= 90) return { level: "Excelente", color: "text-green-600", bgColor: "bg-green-50" };
@@ -396,16 +352,22 @@ function ResultPage({
               <div className="flex gap-4 pt-6 border-t">
                 <Button
                   variant="outline"
-                  onClick={() => window.location.reload()}
+                  onClick={() => window.location.href = "/"}
                   className="flex-1"
                 >
-                  Nova Avaliação
+                  Voltar para Início
                 </Button>
                 <Button
                   onClick={() => window.print()}
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
                   Imprimir Resultado
+                </Button>
+                <Button
+                  onClick={onRestart}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Fazer Novamente
                 </Button>
               </div>
             </div>
