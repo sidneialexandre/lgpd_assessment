@@ -28,4 +28,28 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+// Assessment table to store individual assessments
+export const assessments = mysqlTable("assessments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  totalScore: int("totalScore").default(0).notNull(),
+  compliancePercentage: int("compliancePercentage").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Assessment = typeof assessments.$inferSelect;
+export type InsertAssessment = typeof assessments.$inferInsert;
+
+// Answers table to store user responses
+export const answers = mysqlTable("answers", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentId: int("assessmentId").notNull().references(() => assessments.id),
+  questionId: int("questionId").notNull(),
+  selectedAnswer: varchar("selectedAnswer", { length: 1 }).notNull(), // A, B, C, D
+  score: int("score").notNull(), // 100, 65, 35, 0
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Answer = typeof answers.$inferSelect;
+export type InsertAnswer = typeof answers.$inferInsert;

@@ -1,7 +1,9 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { z } from "zod";
+import { createAssessment, getAssessmentById, getUserAssessments, saveAnswers, getAssessmentAnswers } from "./db";
 
 export const appRouter = router({
   system: systemRouter,
@@ -17,12 +19,46 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  assessment: router({
+    create: protectedProcedure.mutation(async ({ ctx }) => {
+      return await createAssessment(ctx.user.id);
+    }),
+
+    getById: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .query(async ({ input }) => {
+        return await getAssessmentById(input.assessmentId);
+      }),
+
+    getUserAssessments: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserAssessments(ctx.user.id);
+    }),
+
+    saveAnswers: protectedProcedure
+      .input(
+        z.object({
+          assessmentId: z.number(),
+          answers: z.array(
+            z.object({
+              questionId: z.number(),
+              selectedAnswer: z.string(),
+              score: z.number(),
+            })
+          ),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await saveAnswers(input.assessmentId, input.answers);
+        return await getAssessmentById(input.assessmentId);
+      }),
+
+    getAnswers: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .query(async ({ input }) => {
+        return await getAssessmentAnswers(input.assessmentId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
+

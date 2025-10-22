@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, assessments, answers, Assessment, Answer } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,91 @@ export async function getUser(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createAssessment(userId: number): Promise<Assessment> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(assessments).values({
+    userId,
+    totalScore: 0,
+    compliancePercentage: 0,
+  });
+
+  const assessment = await db
+    .select()
+    .from(assessments)
+    .where(eq(assessments.id, Number(result[0].insertId)))
+    .limit(1);
+
+  return assessment[0];
+}
+
+export async function getAssessmentById(assessmentId: number): Promise<Assessment | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(assessments)
+    .where(eq(assessments.id, assessmentId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserAssessments(userId: number): Promise<Assessment[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(assessments)
+    .where(eq(assessments.userId, userId))
+    .orderBy(assessments.createdAt);
+}
+
+export async function saveAnswers(
+  assessmentId: number,
+  answers_data: Array<{ questionId: number; selectedAnswer: string; score: number }>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Calculate total score
+  const totalScore = answers_data.reduce((sum, answer) => sum + answer.score, 0);
+  const compliancePercentage = Math.round((totalScore / 10000) * 100);
+
+  // Save all answers
+  for (const answer of answers_data) {
+    await db.insert(answers).values({
+      assessmentId,
+      questionId: answer.questionId,
+      selectedAnswer: answer.selectedAnswer,
+      score: answer.score,
+    });
+  }
+
+  // Update assessment with total score and percentage
+  await db
+    .update(assessments)
+    .set({
+      totalScore,
+      compliancePercentage,
+    })
+    .where(eq(assessments.id, assessmentId));
+}
+
+export async function getAssessmentAnswers(assessmentId: number): Promise<Answer[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(answers)
+    .where(eq(answers.assessmentId, assessmentId))
+    .orderBy(answers.questionId);
+}
