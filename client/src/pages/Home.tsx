@@ -10,7 +10,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   const handleStartAssessment = () => {
-    window.location.href = "/assessment";
+    window.location.href = "/company-setup";
   };
 
   return (

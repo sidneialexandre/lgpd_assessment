@@ -15,6 +15,13 @@
       "when": 1761160590526,
       "tag": "0001_rainy_randall_flagg",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1761229581451,
+      "tag": "0002_brown_groot",
+      "breakpoints": true
     }
   ]
 }

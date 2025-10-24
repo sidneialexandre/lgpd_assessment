@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QUESTIONS } from "@shared/questions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,13 +9,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 export default function Assessment() {
   const [, setLocation] = useLocation();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isCompleted, setIsCompleted] = useState(false);
-  const [result, setResult] = useState<{ totalScore: number; compliancePercentage: number } | null>(null);
+  const [result, setResult] = useState<{ totalScore: number; compliancePercentage: number; company?: { cnpj: string; razaoSocial: string } } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Get query parameters
+  const [searchParams] = useState(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search);
+    }
+    return new URLSearchParams();
+  });
+
+  const companyId = searchParams.get("companyId");
+  const assessmentId = searchParams.get("assessmentId");
+
+  const getCompanyQuery = trpc.company.getById.useQuery(
+    { companyId: parseInt(companyId || "0") },
+    { enabled: !!companyId }
+  );
+
+  const getGroupsQuery = trpc.group.getByCompany.useQuery(
+    { companyId: parseInt(companyId || "0") },
+    { enabled: !!companyId }
+  );
+
+  const saveAnswersMutation = trpc.assessment.saveAnswers.useMutation();
 
   const currentQuestion = QUESTIONS[currentQuestionIndex];
   const answeredCount = Object.keys(answers).length;
@@ -40,36 +65,88 @@ export default function Assessment() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (answeredCount !== QUESTIONS.length) {
       alert("Por favor, responda todas as questões antes de enviar.");
       return;
     }
 
-    // Calculate total score
-    let totalScore = 0;
-    QUESTIONS.forEach((q) => {
-      const selectedAnswer = answers[q.id] as "A" | "B" | "C" | "D";
-      const score = q.scores[selectedAnswer] || 0;
-      totalScore += score;
-    });
+    if (!assessmentId || !companyId) {
+      alert("Erro: Dados da empresa não encontrados.");
+      return;
+    }
 
-    const compliancePercentage = Math.round((totalScore / 10000) * 100);
+    setLoading(true);
 
-    setResult({
-      totalScore,
-      compliancePercentage,
-    });
-    setIsCompleted(true);
+    try {
+      // Get total respondents from groups
+      const groups = getGroupsQuery.data || [];
+      const totalRespondents = groups.reduce((sum, g) => sum + g.respondentCount, 0);
+
+      // Prepare answers with response count
+      const answersData = QUESTIONS.map((q) => {
+        const selectedAnswer = answers[q.id] as "A" | "B" | "C" | "D";
+        const score = q.scores[selectedAnswer] || 0;
+        return {
+          questionId: q.id,
+          selectedAnswer,
+          score,
+          responseCount: totalRespondents,
+        };
+      });
+
+      // Save answers
+      const assessment = await saveAnswersMutation.mutateAsync({
+        assessmentId: parseInt(assessmentId),
+        answers: answersData,
+      });
+
+      // Calculate results
+      const totalScore = answersData.reduce((sum, a) => sum + (a.score * a.responseCount), 0);
+      const maxScore = 100000;
+      const compliancePercentage = Math.round((totalScore / maxScore) * 100);
+
+      setResult({
+        totalScore,
+        compliancePercentage,
+        company: getCompanyQuery.data ? {
+          cnpj: getCompanyQuery.data.cnpj,
+          razaoSocial: getCompanyQuery.data.razaoSocial,
+        } : undefined,
+      });
+      setIsCompleted(true);
+    } catch (error) {
+      console.error("Erro ao salvar avaliação:", error);
+      alert("Erro ao salvar avaliação. Por favor, tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (isCompleted && result) {
-    return <ResultPage result={result} onRestart={() => {
-      setCurrentQuestionIndex(0);
-      setAnswers({});
-      setIsCompleted(false);
-      setResult(null);
-    }} />;
+    return (
+      <ResultPage
+        result={result}
+        onRestart={() => {
+          setCurrentQuestionIndex(0);
+          setAnswers({});
+          setIsCompleted(false);
+          setResult(null);
+        }}
+      />
+    );
+  }
+
+  if (getCompanyQuery.isLoading || getGroupsQuery.isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <p className="text-gray-600">Carregando avaliação...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -80,6 +157,24 @@ export default function Assessment() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Avaliação de Conformidade LGPD</h1>
           <p className="text-gray-600">Lei Geral de Proteção de Dados - Lei Nº 13.709/2018</p>
         </div>
+
+        {/* Company Info */}
+        {getCompanyQuery.data && (
+          <Card className="mb-8 bg-blue-50 border-blue-200">
+            <CardContent className="pt-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Empresa</p>
+                  <p className="text-lg font-semibold text-gray-900">{getCompanyQuery.data.razaoSocial}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">CNPJ</p>
+                  <p className="text-lg font-semibold text-gray-900">{getCompanyQuery.data.cnpj}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Progress Card */}
         <Card className="mb-8 bg-white shadow-lg">
@@ -182,9 +277,6 @@ export default function Assessment() {
                           >
                             <span className="font-semibold text-blue-600">{key})</span> {value}
                           </Label>
-                          <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                            {currentQuestion.scores[key as "A" | "B" | "C" | "D"]} pts
-                          </span>
                         </div>
                       ))}
                     </div>
@@ -207,10 +299,10 @@ export default function Assessment() {
                 {currentQuestionIndex === QUESTIONS.length - 1 ? (
                   <Button
                     onClick={handleSubmit}
-                    disabled={answeredCount !== QUESTIONS.length}
+                    disabled={answeredCount !== QUESTIONS.length || loading}
                     className="bg-green-600 hover:bg-green-700"
                   >
-                    Enviar Avaliação
+                    {loading ? "Processando..." : "Enviar Avaliação"}
                   </Button>
                 ) : (
                   <Button onClick={handleNextQuestion}>
@@ -240,7 +332,7 @@ function ResultPage({
   result,
   onRestart,
 }: {
-  result: { totalScore: number; compliancePercentage: number };
+  result: { totalScore: number; compliancePercentage: number; company?: { cnpj: string; razaoSocial: string } };
   onRestart: () => void;
 }) {
   const getComplianceLevel = (percentage: number) => {
@@ -264,6 +356,15 @@ function ResultPage({
           </CardHeader>
           <CardContent className="pt-8">
             <div className="space-y-8">
+              {/* Company Info */}
+              {result.company && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-gray-600 mb-1">Empresa Avaliada</p>
+                  <p className="text-lg font-semibold text-gray-900">{result.company.razaoSocial}</p>
+                  <p className="text-sm text-gray-600 mt-2">CNPJ: {result.company.cnpj}</p>
+                </div>
+              )}
+
               {/* Score Display */}
               <div className={`${compliance.bgColor} p-8 rounded-lg text-center`}>
                 <p className="text-gray-600 text-sm font-medium mb-2">Nível de Conformidade</p>
@@ -282,8 +383,8 @@ function ResultPage({
                   <Card className="bg-blue-50">
                     <CardContent className="pt-6">
                       <p className="text-sm text-gray-600 mb-1">Pontuação Total</p>
-                      <p className="text-2xl font-bold text-blue-600">{result.totalScore}</p>
-                      <p className="text-xs text-gray-500 mt-1">de 10.000 pontos</p>
+                      <p className="text-2xl font-bold text-blue-600">{result.totalScore.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500 mt-1">de 100.000 pontos</p>
                     </CardContent>
                   </Card>
                   <Card className="bg-indigo-50">
@@ -362,12 +463,6 @@ function ResultPage({
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
                   Imprimir Resultado
-                </Button>
-                <Button
-                  onClick={onRestart}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Fazer Novamente
                 </Button>
               </div>
             </div>

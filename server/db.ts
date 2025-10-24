@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, assessments, answers, Assessment, Answer } from "../drizzle/schema";
+import { InsertUser, users, companies, groups, assessments, answers, Assessment, Answer, Company, Group, InsertCompany, InsertGroup } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,16 +89,119 @@ export async function getUser(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createAssessment(userId: number): Promise<Assessment> {
+// Company functions
+export async function createCompany(userId: number, cnpj: string, razaoSocial: string): Promise<Company> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(companies).values({
+    userId,
+    cnpj,
+    razaoSocial,
+  });
+
+  const company = await db
+    .select()
+    .from(companies)
+    .where(eq(companies.id, Number(result[0].insertId)))
+    .limit(1);
+
+  return company[0];
+}
+
+export async function getCompanyByCNPJ(cnpj: string): Promise<Company | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(companies)
+    .where(eq(companies.cnpj, cnpj))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getCompanyById(companyId: number): Promise<Company | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(companies)
+    .where(eq(companies.id, companyId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserCompanies(userId: number): Promise<Company[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(companies)
+    .where(eq(companies.userId, userId))
+    .orderBy(companies.createdAt);
+}
+
+// Group functions
+export async function createGroup(companyId: number, groupName: string, departmentName: string, respondentCount: number): Promise<Group> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(groups).values({
+    companyId,
+    groupName,
+    departmentName,
+    respondentCount,
+  });
+
+  const group = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.id, Number(result[0].insertId)))
+    .limit(1);
+
+  return group[0];
+}
+
+export async function getCompanyGroups(companyId: number): Promise<Group[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(groups)
+    .where(eq(groups.companyId, companyId))
+    .orderBy(groups.createdAt);
+}
+
+export async function deleteGroup(groupId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.delete(groups).where(eq(groups.id, groupId));
+}
+
+// Assessment functions
+export async function createAssessment(companyId: number): Promise<Assessment> {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
   }
 
   const result = await db.insert(assessments).values({
-    userId,
+    companyId,
     totalScore: 0,
-    compliancePercentage: 0,
+    compliancePercentage: "0",
   });
 
   const assessment = await db
@@ -123,29 +226,30 @@ export async function getAssessmentById(assessmentId: number): Promise<Assessmen
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function getUserAssessments(userId: number): Promise<Assessment[]> {
+export async function getCompanyAssessments(companyId: number): Promise<Assessment[]> {
   const db = await getDb();
   if (!db) return [];
 
   return await db
     .select()
     .from(assessments)
-    .where(eq(assessments.userId, userId))
+    .where(eq(assessments.companyId, companyId))
     .orderBy(assessments.createdAt);
 }
 
 export async function saveAnswers(
   assessmentId: number,
-  answers_data: Array<{ questionId: number; selectedAnswer: string; score: number }>
+  answers_data: Array<{ questionId: number; selectedAnswer: string; score: number; responseCount: number }>
 ): Promise<void> {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
   }
 
-  // Calculate total score
-  const totalScore = answers_data.reduce((sum, answer) => sum + answer.score, 0);
-  const compliancePercentage = Math.round((totalScore / 10000) * 100);
+  // Calculate total score (each response count multiplied by score)
+  const totalScore = answers_data.reduce((sum, answer) => sum + (answer.score * answer.responseCount), 0);
+  const maxScore = 100000; // New maximum score
+  const compliancePercentage = ((totalScore / maxScore) * 100).toFixed(2);
 
   // Save all answers
   for (const answer of answers_data) {
@@ -154,6 +258,7 @@ export async function saveAnswers(
       questionId: answer.questionId,
       selectedAnswer: answer.selectedAnswer,
       score: answer.score,
+      responseCount: answer.responseCount,
     });
   }
 
@@ -177,3 +282,4 @@ export async function getAssessmentAnswers(assessmentId: number): Promise<Answer
     .where(eq(answers.assessmentId, assessmentId))
     .orderBy(answers.questionId);
 }
+

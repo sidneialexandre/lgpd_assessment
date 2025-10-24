@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -28,12 +28,39 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// Assessment table to store individual assessments
+// Companies table to store company information
+export const companies = mysqlTable("companies", {
+  id: int("id").autoincrement().primaryKey(),
+  cnpj: varchar("cnpj", { length: 18 }).notNull().unique(), // XX.XXX.XXX/XXXX-XX
+  razaoSocial: varchar("razaoSocial", { length: 255 }).notNull(),
+  userId: int("userId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = typeof companies.$inferInsert;
+
+// Groups table to store respondent groups
+export const groups = mysqlTable("groups", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull().references(() => companies.id),
+  groupName: varchar("groupName", { length: 100 }).notNull(), // G1, G2, etc
+  departmentName: varchar("departmentName", { length: 255 }).notNull(), // Department name
+  respondentCount: int("respondentCount").notNull(), // Number of people in this group
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Group = typeof groups.$inferSelect;
+export type InsertGroup = typeof groups.$inferInsert;
+
+// Assessment table to store consolidated assessments
 export const assessments = mysqlTable("assessments", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id),
+  companyId: int("companyId").notNull().references(() => companies.id),
   totalScore: int("totalScore").default(0).notNull(),
-  compliancePercentage: int("compliancePercentage").default(0).notNull(),
+  compliancePercentage: decimal("compliancePercentage", { precision: 5, scale: 2 }).default("0").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -41,15 +68,17 @@ export const assessments = mysqlTable("assessments", {
 export type Assessment = typeof assessments.$inferSelect;
 export type InsertAssessment = typeof assessments.$inferInsert;
 
-// Answers table to store user responses
+// Answers table to store consolidated responses
 export const answers = mysqlTable("answers", {
   id: int("id").autoincrement().primaryKey(),
   assessmentId: int("assessmentId").notNull().references(() => assessments.id),
   questionId: int("questionId").notNull(),
   selectedAnswer: varchar("selectedAnswer", { length: 1 }).notNull(), // A, B, C, D
   score: int("score").notNull(), // 100, 65, 35, 0
+  responseCount: int("responseCount").default(1).notNull(), // Number of people who selected this answer
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export type Answer = typeof answers.$inferSelect;
 export type InsertAnswer = typeof answers.$inferInsert;
+
