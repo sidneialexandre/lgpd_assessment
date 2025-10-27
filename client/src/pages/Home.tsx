@@ -209,7 +209,7 @@ export default function Home() {
               { letter: "A", text: "Sim, certamente", points: "100 pts", color: "bg-green-500" },
               { letter: "B", text: "Sim", points: "65 pts", color: "bg-blue-500" },
               { letter: "C", text: "Não", points: "35 pts", color: "bg-yellow-500" },
-              { letter: "D", text: "Não, nunca", points: "0 pts", color: "bg-red-500" },
+              { letter: "D", text: "Não sei", points: "0 pts", color: "bg-red-500" },
             ].map((item) => (
               <div key={item.letter} className="text-center">
                 <div className={`${item.color} w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4`}>
@@ -220,7 +220,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <p className="text-center mt-8 text-lg font-semibold">Máximo de pontos: <span className="text-2xl">10.000</span></p>
+          <p className="text-center mt-8 text-lg font-semibold">Máximo de pontos: <span className="text-2xl">100.000</span></p>
         </div>
       </section>
 

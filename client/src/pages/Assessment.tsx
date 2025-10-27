@@ -16,7 +16,13 @@ export default function Assessment() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isCompleted, setIsCompleted] = useState(false);
-  const [result, setResult] = useState<{ totalScore: number; compliancePercentage: number; company?: { cnpj: string; razaoSocial: string } } | null>(null);
+  const [result, setResult] = useState<{ 
+    isCompleted: boolean; 
+    totalScore: number; 
+    compliancePercentage: number; 
+    company?: { cnpj: string; razaoSocial: string };
+    respondentsRemaining?: number;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Get query parameters
@@ -29,6 +35,7 @@ export default function Assessment() {
 
   const companyId = searchParams.get("companyId");
   const assessmentId = searchParams.get("assessmentId");
+  const sessionId = searchParams.get("sessionId");
 
   const getCompanyQuery = trpc.company.getById.useQuery(
     { companyId: parseInt(companyId || "0") },
@@ -40,7 +47,17 @@ export default function Assessment() {
     { enabled: !!companyId }
   );
 
-  const saveAnswersMutation = trpc.assessment.saveAnswers.useMutation();
+  const getSessionQuery = trpc.respondent.getSession.useQuery(
+    { sessionId: parseInt(sessionId || "0") },
+    { enabled: !!sessionId }
+  );
+
+  const checkCompletionQuery = trpc.respondent.checkCompletion.useQuery(
+    { assessmentId: parseInt(assessmentId || "0") },
+    { enabled: !!assessmentId, refetchInterval: 2000 } // Poll every 2 seconds
+  );
+
+  const saveAnswersMutation = trpc.respondent.saveAnswers.useMutation();
 
   const currentQuestion = QUESTIONS[currentQuestionIndex];
   const answeredCount = Object.keys(answers).length;
@@ -71,19 +88,15 @@ export default function Assessment() {
       return;
     }
 
-    if (!assessmentId || !companyId) {
-      alert("Erro: Dados da empresa não encontrados.");
+    if (!sessionId || !assessmentId || !companyId) {
+      alert("Erro: Dados da sessão não encontrados.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Get total respondents from groups
-      const groups = getGroupsQuery.data || [];
-      const totalRespondents = groups.reduce((sum, g) => sum + g.respondentCount, 0);
-
-      // Prepare answers with response count
+      // Prepare answers with scores
       const answersData = QUESTIONS.map((q) => {
         const selectedAnswer = answers[q.id] as "A" | "B" | "C" | "D";
         const score = q.scores[selectedAnswer] || 0;
@@ -91,29 +104,54 @@ export default function Assessment() {
           questionId: q.id,
           selectedAnswer,
           score,
-          responseCount: totalRespondents,
         };
       });
 
       // Save answers
       const assessment = await saveAnswersMutation.mutateAsync({
+        respondentSessionId: parseInt(sessionId),
         assessmentId: parseInt(assessmentId),
         answers: answersData,
       });
 
-      // Calculate results
-      const totalScore = answersData.reduce((sum, a) => sum + (a.score * a.responseCount), 0);
-      const maxScore = 100000;
-      const compliancePercentage = Math.round((totalScore / maxScore) * 100);
+      if (assessment) {
+        // Check if all respondents have completed
+        const isAssessmentCompleted = assessment.isCompleted === 1;
 
-      setResult({
-        totalScore,
-        compliancePercentage,
-        company: getCompanyQuery.data ? {
-          cnpj: getCompanyQuery.data.cnpj,
-          razaoSocial: getCompanyQuery.data.razaoSocial,
-        } : undefined,
-      });
+        if (isAssessmentCompleted) {
+          // All respondents completed - show final results
+          const compliancePercentage = parseFloat(assessment.compliancePercentage);
+          setResult({
+            isCompleted: true,
+            totalScore: assessment.totalScore,
+            compliancePercentage,
+            company: getCompanyQuery.data ? {
+              cnpj: getCompanyQuery.data.cnpj,
+              razaoSocial: getCompanyQuery.data.razaoSocial,
+            } : undefined,
+          });
+        } else {
+          // Still waiting for other respondents
+          const groups = getGroupsQuery.data || [];
+          const totalRespondents = groups.reduce((sum, g) => sum + g.respondentCount, 0);
+          
+          // Count completed sessions
+          const sessions = await trpc.respondent.getAssessmentSessions.useQuery(
+            { assessmentId: parseInt(assessmentId) }
+          );
+          
+          const completedCount = sessions.data?.filter(s => s.isCompleted === 1).length || 0;
+          const respondentsRemaining = totalRespondents - completedCount;
+
+          setResult({
+            isCompleted: false,
+            totalScore: assessment.totalScore,
+            compliancePercentage: parseFloat(assessment.compliancePercentage),
+            respondentsRemaining,
+          });
+        }
+      }
+
       setIsCompleted(true);
     } catch (error) {
       console.error("Erro ao salvar avaliação:", error);
@@ -127,17 +165,12 @@ export default function Assessment() {
     return (
       <ResultPage
         result={result}
-        onRestart={() => {
-          setCurrentQuestionIndex(0);
-          setAnswers({});
-          setIsCompleted(false);
-          setResult(null);
-        }}
+        companyId={parseInt(companyId || "0")}
       />
     );
   }
 
-  if (getCompanyQuery.isLoading || getGroupsQuery.isLoading) {
+  if (getCompanyQuery.isLoading || getGroupsQuery.isLoading || getSessionQuery.isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -149,6 +182,8 @@ export default function Assessment() {
     );
   }
 
+  const currentSession = getSessionQuery.data;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -159,10 +194,10 @@ export default function Assessment() {
         </div>
 
         {/* Company Info */}
-        {getCompanyQuery.data && (
+        {getCompanyQuery.data && currentSession && (
           <Card className="mb-8 bg-blue-50 border-blue-200">
             <CardContent className="pt-6">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Empresa</p>
                   <p className="text-lg font-semibold text-gray-900">{getCompanyQuery.data.razaoSocial}</p>
@@ -170,6 +205,10 @@ export default function Assessment() {
                 <div>
                   <p className="text-sm text-gray-600">CNPJ</p>
                   <p className="text-lg font-semibold text-gray-900">{getCompanyQuery.data.cnpj}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Respondente</p>
+                  <p className="text-lg font-semibold text-gray-900">Respondente {currentSession.respondentNumber}</p>
                 </div>
               </div>
             </CardContent>
@@ -330,10 +369,16 @@ export default function Assessment() {
 
 function ResultPage({
   result,
-  onRestart,
+  companyId,
 }: {
-  result: { totalScore: number; compliancePercentage: number; company?: { cnpj: string; razaoSocial: string } };
-  onRestart: () => void;
+  result: { 
+    isCompleted: boolean; 
+    totalScore: number; 
+    compliancePercentage: number; 
+    company?: { cnpj: string; razaoSocial: string };
+    respondentsRemaining?: number;
+  };
+  companyId: number;
 }) {
   const getComplianceLevel = (percentage: number) => {
     if (percentage >= 90) return { level: "Excelente", color: "text-green-600", bgColor: "bg-green-50" };
@@ -342,7 +387,59 @@ function ResultPage({
     return { level: "Insuficiente", color: "text-red-600", bgColor: "bg-red-50" };
   };
 
-  const compliance = getComplianceLevel(result.compliancePercentage);
+  const compliance = result.isCompleted ? getComplianceLevel(result.compliancePercentage) : null;
+
+  if (!result.isCompleted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+        <div className="max-w-2xl mx-auto">
+          <Card className="bg-white shadow-2xl">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+              <CardTitle className="text-3xl flex items-center gap-2">
+                <Clock className="w-8 h-8" />
+                Avaliação Enviada!
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-8">
+              <div className="space-y-6">
+                {/* Company Info */}
+                {result.company && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-gray-600 mb-1">Empresa Avaliada</p>
+                    <p className="text-lg font-semibold text-gray-900">{result.company.razaoSocial}</p>
+                    <p className="text-sm text-gray-600 mt-2">CNPJ: {result.company.cnpj}</p>
+                  </div>
+                )}
+
+                {/* Status Message */}
+                <div className="p-6 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                  <p className="text-gray-700 mb-2">
+                    Sua avaliação foi enviada com sucesso!
+                  </p>
+                  <p className="text-lg font-semibold text-blue-600 mb-4">
+                    Aguardando {result.respondentsRemaining} respondente(s)...
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    O resultado final será calculado quando todos os respondentes completarem a avaliação.
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-4 pt-6 border-t">
+                  <Button
+                    onClick={() => window.location.href = "/"}
+                    className="flex-1"
+                  >
+                    Voltar para Início
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -366,15 +463,17 @@ function ResultPage({
               )}
 
               {/* Score Display */}
-              <div className={`${compliance.bgColor} p-8 rounded-lg text-center`}>
-                <p className="text-gray-600 text-sm font-medium mb-2">Nível de Conformidade</p>
-                <p className={`${compliance.color} text-5xl font-bold mb-2`}>
-                  {result.compliancePercentage}%
-                </p>
-                <p className={`${compliance.color} text-xl font-semibold`}>
-                  {compliance.level}
-                </p>
-              </div>
+              {compliance && (
+                <div className={`${compliance.bgColor} p-8 rounded-lg text-center`}>
+                  <p className="text-gray-600 text-sm font-medium mb-2">Nível de Conformidade</p>
+                  <p className={`${compliance.color} text-5xl font-bold mb-2`}>
+                    {result.compliancePercentage}%
+                  </p>
+                  <p className={`${compliance.color} text-xl font-semibold`}>
+                    {compliance.level}
+                  </p>
+                </div>
+              )}
 
               {/* Score Breakdown */}
               <div className="space-y-4">

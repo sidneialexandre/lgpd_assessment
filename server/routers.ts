@@ -13,8 +13,14 @@ import {
   deleteGroup,
   createAssessment, 
   getAssessmentById, 
-  getCompanyAssessments, 
-  saveAnswers, 
+  getCompanyAssessments,
+  createRespondentSession,
+  getRespondentSession,
+  getAssessmentRespondentSessions,
+  saveIndividualAnswers,
+  getIndividualAnswers,
+  checkAllRespondentsCompleted,
+  calculateConsolidatedResults,
   getAssessmentAnswers 
 } from "./db";
 
@@ -108,29 +114,76 @@ export const appRouter = router({
         return await getCompanyAssessments(input.companyId);
       }),
 
+    getAnswers: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .query(async ({ input }) => {
+        return await getAssessmentAnswers(input.assessmentId);
+      }),
+  }),
+
+  respondent: router({
+    createSession: protectedProcedure
+      .input(
+        z.object({
+          assessmentId: z.number(),
+          groupId: z.number(),
+          respondentNumber: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await createRespondentSession(input.assessmentId, input.groupId, input.respondentNumber);
+      }),
+
+    getSession: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        return await getRespondentSession(input.sessionId);
+      }),
+
+    getAssessmentSessions: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .query(async ({ input }) => {
+        return await getAssessmentRespondentSessions(input.assessmentId);
+      }),
+
     saveAnswers: protectedProcedure
       .input(
         z.object({
+          respondentSessionId: z.number(),
           assessmentId: z.number(),
           answers: z.array(
             z.object({
               questionId: z.number(),
               selectedAnswer: z.string(),
               score: z.number(),
-              responseCount: z.number(),
             })
           ),
         })
       )
       .mutation(async ({ input }) => {
-        await saveAnswers(input.assessmentId, input.answers);
+        // Save individual answers
+        await saveIndividualAnswers(input.respondentSessionId, input.answers);
+
+        // Check if all respondents have completed
+        const allCompleted = await checkAllRespondentsCompleted(input.assessmentId);
+
+        if (allCompleted) {
+          // Calculate consolidated results
+          await calculateConsolidatedResults(input.assessmentId);
+        }
+
         return await getAssessmentById(input.assessmentId);
       }),
 
-    getAnswers: protectedProcedure
+    checkCompletion: protectedProcedure
       .input(z.object({ assessmentId: z.number() }))
       .query(async ({ input }) => {
-        return await getAssessmentAnswers(input.assessmentId);
+        const isCompleted = await checkAllRespondentsCompleted(input.assessmentId);
+        const assessment = await getAssessmentById(input.assessmentId);
+        return {
+          isCompleted,
+          assessment,
+        };
       }),
   }),
 });

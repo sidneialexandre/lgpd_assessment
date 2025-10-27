@@ -1,6 +1,12 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, companies, groups, assessments, answers, Assessment, Answer, Company, Group, InsertCompany, InsertGroup } from "../drizzle/schema";
+import { 
+  InsertUser, users, companies, groups, assessments, answers, 
+  respondentSessions, individualAnswers,
+  Assessment, Answer, Company, Group, 
+  InsertCompany, InsertGroup, RespondentSession, IndividualAnswer,
+  InsertRespondentSession, InsertIndividualAnswer
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -160,6 +166,7 @@ export async function createGroup(companyId: number, groupName: string, departme
     groupName,
     departmentName,
     respondentCount,
+    respondentsCompleted: 0,
   });
 
   const group = await db
@@ -202,6 +209,7 @@ export async function createAssessment(companyId: number): Promise<Assessment> {
     companyId,
     totalScore: 0,
     compliancePercentage: "0",
+    isCompleted: 0,
   });
 
   const assessment = await db
@@ -237,37 +245,196 @@ export async function getCompanyAssessments(companyId: number): Promise<Assessme
     .orderBy(assessments.createdAt);
 }
 
-export async function saveAnswers(
-  assessmentId: number,
-  answers_data: Array<{ questionId: number; selectedAnswer: string; score: number; responseCount: number }>
+// Respondent session functions
+export async function createRespondentSession(assessmentId: number, groupId: number, respondentNumber: number): Promise<RespondentSession> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(respondentSessions).values({
+    assessmentId,
+    groupId,
+    respondentNumber,
+    isCompleted: 0,
+    totalScore: 0,
+  });
+
+  const session = await db
+    .select()
+    .from(respondentSessions)
+    .where(eq(respondentSessions.id, Number(result[0].insertId)))
+    .limit(1);
+
+  return session[0];
+}
+
+export async function getRespondentSession(sessionId: number): Promise<RespondentSession | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(respondentSessions)
+    .where(eq(respondentSessions.id, sessionId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getAssessmentRespondentSessions(assessmentId: number): Promise<RespondentSession[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(respondentSessions)
+    .where(eq(respondentSessions.assessmentId, assessmentId))
+    .orderBy(respondentSessions.createdAt);
+}
+
+// Individual answers functions
+export async function saveIndividualAnswers(
+  respondentSessionId: number,
+  answers_data: Array<{ questionId: number; selectedAnswer: string; score: number }>
 ): Promise<void> {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
   }
 
-  // Calculate total score (each response count multiplied by score)
-  const totalScore = answers_data.reduce((sum, answer) => sum + (answer.score * answer.responseCount), 0);
-  const maxScore = 100000; // New maximum score
-  const compliancePercentage = ((totalScore / maxScore) * 100).toFixed(2);
+  // Calculate total score for this respondent
+  const totalScore = answers_data.reduce((sum, answer) => sum + answer.score, 0);
 
-  // Save all answers
+  // Save all individual answers
   for (const answer of answers_data) {
-    await db.insert(answers).values({
-      assessmentId,
+    await db.insert(individualAnswers).values({
+      respondentSessionId,
       questionId: answer.questionId,
       selectedAnswer: answer.selectedAnswer,
       score: answer.score,
-      responseCount: answer.responseCount,
     });
   }
 
-  // Update assessment with total score and percentage
+  // Update respondent session with total score and mark as completed
+  await db
+    .update(respondentSessions)
+    .set({
+      totalScore,
+      isCompleted: 1,
+    })
+    .where(eq(respondentSessions.id, respondentSessionId));
+}
+
+export async function getIndividualAnswers(respondentSessionId: number): Promise<IndividualAnswer[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(individualAnswers)
+    .where(eq(individualAnswers.respondentSessionId, respondentSessionId))
+    .orderBy(individualAnswers.questionId);
+}
+
+// Check if all respondents have completed the assessment
+export async function checkAllRespondentsCompleted(assessmentId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Get all groups for this assessment
+  const assessment = await getAssessmentById(assessmentId);
+  if (!assessment) return false;
+
+  const companyGroups = await getCompanyGroups(assessment.companyId);
+  
+  // Get all respondent sessions for this assessment
+  const sessions = await getAssessmentRespondentSessions(assessmentId);
+  
+  // Count completed sessions per group
+  const completedByGroup: Record<number, number> = {};
+  for (const session of sessions) {
+    if (session.isCompleted === 1) {
+      completedByGroup[session.groupId] = (completedByGroup[session.groupId] || 0) + 1;
+    }
+  }
+
+  // Check if all respondents in all groups have completed
+  for (const group of companyGroups) {
+    const completedCount = completedByGroup[group.id] || 0;
+    if (completedCount < group.respondentCount) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Calculate consolidated assessment results
+export async function calculateConsolidatedResults(assessmentId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Get all completed respondent sessions
+  const sessions = await db
+    .select()
+    .from(respondentSessions)
+    .where(and(
+      eq(respondentSessions.assessmentId, assessmentId),
+      eq(respondentSessions.isCompleted, 1)
+    ));
+
+  // Calculate total score from all respondents
+  let totalScore = 0;
+  const answerCounts: Record<number, Record<string, number>> = {};
+
+  for (const session of sessions) {
+    const sessionAnswers = await getIndividualAnswers(session.id);
+    
+    for (const answer of sessionAnswers) {
+      totalScore += answer.score;
+      
+      if (!answerCounts[answer.questionId]) {
+        answerCounts[answer.questionId] = { A: 0, B: 0, C: 0, D: 0 };
+      }
+      answerCounts[answer.questionId][answer.selectedAnswer] = (answerCounts[answer.questionId][answer.selectedAnswer] || 0) + 1;
+    }
+  }
+
+  // Delete existing consolidated answers
+  await db.delete(answers).where(eq(answers.assessmentId, assessmentId));
+
+  // Save consolidated answers
+  for (const questionId in answerCounts) {
+    const answerData = answerCounts[questionId];
+    const scores: Record<string, number> = { A: 100, B: 65, C: 35, D: 0 };
+    
+    for (const [selectedAnswer, count] of Object.entries(answerData)) {
+      if (count > 0) {
+        await db.insert(answers).values({
+          assessmentId,
+          questionId: parseInt(questionId),
+          selectedAnswer,
+          score: scores[selectedAnswer],
+          responseCount: count,
+        });
+      }
+    }
+  }
+
+  // Calculate compliance percentage
+  const maxScore = 100000;
+  const compliancePercentage = ((totalScore / maxScore) * 100).toFixed(2);
+
+  // Update assessment with final results
   await db
     .update(assessments)
     .set({
       totalScore,
       compliancePercentage,
+      isCompleted: 1,
     })
     .where(eq(assessments.id, assessmentId));
 }

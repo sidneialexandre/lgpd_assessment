@@ -130,8 +130,8 @@ export default function CompanySetup() {
         companyId: company.id,
       });
 
-      // Redirect to assessment page with company and assessment info
-      setLocation(`/assessment?companyId=${company.id}&assessmentId=${assessment.id}`);
+      // Redirect to respondent selection page
+      setLocation(`/respondent-selection?companyId=${company.id}&assessmentId=${assessment.id}`);
     } catch (err) {
       setError("Erro ao criar empresa e grupos. Por favor, tente novamente.");
       console.error(err);
@@ -301,7 +301,7 @@ export default function CompanySetup() {
             disabled={loading || !cnpj.trim() || !razaoSocial.trim() || groups.length === 0}
             className="flex-1 bg-green-600 hover:bg-green-700"
           >
-            {loading ? "Processando..." : "Iniciar Avaliação"}
+            {loading ? "Processando..." : "Próximo Passo"}
           </Button>
         </div>
       </div>
