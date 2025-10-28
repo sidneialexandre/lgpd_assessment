@@ -71,6 +71,11 @@ export default function Assessment() {
   };
 
   const handleNextQuestion = () => {
+    // Validate that current question is answered
+    if (!answers[currentQuestion.id]) {
+      alert("Por favor, responda a pergunta atual antes de avançar.");
+      return;
+    }
     if (currentQuestionIndex < QUESTIONS.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
@@ -344,7 +349,10 @@ export default function Assessment() {
                     {loading ? "Processando..." : "Enviar Avaliação"}
                   </Button>
                 ) : (
-                  <Button onClick={handleNextQuestion}>
+                  <Button 
+                    onClick={handleNextQuestion}
+                    disabled={!answers[currentQuestion.id]}
+                  >
                     Próxima →
                   </Button>
                 )}

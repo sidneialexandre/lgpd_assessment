@@ -433,7 +433,7 @@ export async function calculateConsolidatedResults(assessmentId: number): Promis
     .update(assessments)
     .set({
       totalScore,
-      compliancePercentage,
+      compliancePercentage: compliancePercentage as unknown as string,
       isCompleted: 1,
     })
     .where(eq(assessments.id, assessmentId));
