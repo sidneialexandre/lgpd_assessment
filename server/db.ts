@@ -426,14 +426,14 @@ export async function calculateConsolidatedResults(assessmentId: number): Promis
 
   // Calculate compliance percentage
   const maxScore = 100000;
-  const compliancePercentage = ((totalScore / maxScore) * 100).toFixed(2);
+  const compliancePercentage = parseFloat(((totalScore / maxScore) * 100).toFixed(2));
 
   // Update assessment with final results
   await db
     .update(assessments)
     .set({
       totalScore,
-      compliancePercentage: compliancePercentage as unknown as string,
+      compliancePercentage: compliancePercentage.toString(),
       isCompleted: 1,
     })
     .where(eq(assessments.id, assessmentId));

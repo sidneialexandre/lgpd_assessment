@@ -1,5 +1,9 @@
 # Avaliação de Conformidade LGPD - TODO
 
+## Bugs Corrigidos (Recentes)
+
+- [x] Erro ao finalizar a avaliação e clicar em "Enviar Avaliação" (corrigido tratamento de compliancePercentage e removído useQuery de dentro de async)
+
 ## Bugs Corrigidos
 
 - [x] Erro ao salvar avaliação ao final do respondente 1 (corrigido tipo de compliancePercentage)

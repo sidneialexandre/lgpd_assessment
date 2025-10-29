@@ -120,38 +120,33 @@ export default function Assessment() {
       });
 
       if (assessment) {
-        // Check if all respondents have completed
         const isAssessmentCompleted = assessment.isCompleted === 1;
+        let compliancePercentageNum = 0;
+        if (typeof assessment.compliancePercentage === "string") {
+          compliancePercentageNum = parseFloat(assessment.compliancePercentage);
+        } else if (typeof assessment.compliancePercentage === "number") {
+          compliancePercentageNum = assessment.compliancePercentage;
+        }
 
         if (isAssessmentCompleted) {
-          // All respondents completed - show final results
-          const compliancePercentage = parseFloat(assessment.compliancePercentage);
           setResult({
             isCompleted: true,
-            totalScore: assessment.totalScore,
-            compliancePercentage,
+            totalScore: assessment.totalScore || 0,
+            compliancePercentage: compliancePercentageNum,
             company: getCompanyQuery.data ? {
               cnpj: getCompanyQuery.data.cnpj,
               razaoSocial: getCompanyQuery.data.razaoSocial,
             } : undefined,
           });
         } else {
-          // Still waiting for other respondents
           const groups = getGroupsQuery.data || [];
           const totalRespondents = groups.reduce((sum, g) => sum + g.respondentCount, 0);
-          
-          // Count completed sessions
-          const sessions = await trpc.respondent.getAssessmentSessions.useQuery(
-            { assessmentId: parseInt(assessmentId) }
-          );
-          
-          const completedCount = sessions.data?.filter(s => s.isCompleted === 1).length || 0;
-          const respondentsRemaining = totalRespondents - completedCount;
+          const respondentsRemaining = Math.max(0, totalRespondents - 1);
 
           setResult({
             isCompleted: false,
-            totalScore: assessment.totalScore,
-            compliancePercentage: parseFloat(assessment.compliancePercentage),
+            totalScore: assessment.totalScore || 0,
+            compliancePercentage: compliancePercentageNum,
             respondentsRemaining,
           });
         }
