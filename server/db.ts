@@ -245,6 +245,11 @@ export async function getCompanyAssessments(companyId: number): Promise<Assessme
     .orderBy(assessments.createdAt);
 }
 
+// Generate unique token for respondent
+function generateAccessToken(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${Math.random().toString(36).substring(2, 15)}`;
+}
+
 // Respondent session functions
 export async function createRespondentSession(assessmentId: number, groupId: number, respondentNumber: number): Promise<RespondentSession> {
   const db = await getDb();
@@ -252,10 +257,13 @@ export async function createRespondentSession(assessmentId: number, groupId: num
     throw new Error("Database not available");
   }
 
+  const accessToken = generateAccessToken();
+
   const result = await db.insert(respondentSessions).values({
     assessmentId,
     groupId,
     respondentNumber,
+    accessToken,
     isCompleted: 0,
     totalScore: 0,
   });
@@ -267,6 +275,19 @@ export async function createRespondentSession(assessmentId: number, groupId: num
     .limit(1);
 
   return session[0];
+}
+
+export async function getRespondentSessionByToken(accessToken: string): Promise<RespondentSession | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(respondentSessions)
+    .where(eq(respondentSessions.accessToken, accessToken))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
 }
 
 export async function getRespondentSession(sessionId: number): Promise<RespondentSession | undefined> {

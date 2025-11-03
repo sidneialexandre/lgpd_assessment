@@ -1,5 +1,14 @@
 # Avaliação de Conformidade LGPD - TODO
 
+## Features Completadas (Recentes)
+
+- [x] Gerar link único para respondentes acessarem a avaliação
+- [x] Painel de administração para monitorar progresso da avaliação
+- [x] Visualizar respondentes faltantes
+- [x] Visualizar pontuação dos respondentes que completaram
+- [x] Opção de finalizar avaliação antecipadamente
+- [x] Calcular percentual de conformidade com respondentes que completaram
+
 ## Bugs Corrigidos (Recentes)
 
 - [x] Erro ao finalizar a avaliação e clicar em "Enviar Avaliação" (corrigido tratamento de compliancePercentage e removído useQuery de dentro de async)

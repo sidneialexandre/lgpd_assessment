@@ -76,6 +76,7 @@ export const respondentSessions = mysqlTable("respondentSessions", {
   assessmentId: int("assessmentId").notNull().references(() => assessments.id),
   groupId: int("groupId").notNull().references(() => groups.id),
   respondentNumber: int("respondentNumber").notNull(), // Which respondent in the group (1, 2, 3, etc)
+  accessToken: varchar("accessToken", { length: 255 }), // Unique token for respondent access
   isCompleted: int("isCompleted").default(0).notNull(), // 0 = not completed, 1 = completed
   totalScore: int("totalScore").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

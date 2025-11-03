@@ -16,6 +16,7 @@ import {
   getCompanyAssessments,
   createRespondentSession,
   getRespondentSession,
+  getRespondentSessionByToken,
   getAssessmentRespondentSessions,
   saveIndividualAnswers,
   getIndividualAnswers,
@@ -119,6 +120,34 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await getAssessmentAnswers(input.assessmentId);
       }),
+
+    getWithDetails: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .query(async ({ input }) => {
+        const assessment = await getAssessmentById(input.assessmentId);
+        if (!assessment) return null;
+
+        const sessions = await getAssessmentRespondentSessions(input.assessmentId);
+        const completedSessions = sessions.filter(s => s.isCompleted === 1);
+        const pendingSessions = sessions.filter(s => s.isCompleted === 0);
+
+        return {
+          assessment,
+          totalRespondents: sessions.length,
+          completedRespondents: completedSessions.length,
+          pendingRespondents: pendingSessions.length,
+          sessions,
+          completedSessions,
+          pendingSessions,
+        };
+      }),
+
+    finalize: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .mutation(async ({ input }) => {
+        await calculateConsolidatedResults(input.assessmentId);
+        return await getAssessmentById(input.assessmentId);
+      }),
   }),
 
   respondent: router({
@@ -185,7 +214,14 @@ export const appRouter = router({
           assessment,
         };
       }),
+
+    getByToken: publicProcedure
+      .input(z.object({ accessToken: z.string() }))
+      .query(async ({ input }) => {
+        return await getRespondentSessionByToken(input.accessToken);
+      }),
   }),
+
 });
 
 export type AppRouter = typeof appRouter;
