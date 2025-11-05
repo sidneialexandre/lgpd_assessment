@@ -10,12 +10,16 @@ import CompanySetup from "./pages/CompanySetup";
 import RespondentSelection from "./pages/RespondentSelection";
 import AssessmentAdmin from "./pages/AssessmentAdmin";
 import RespondentAccess from "./pages/RespondentAccess";
+import MyAssessments from "./pages/MyAssessments";
+import CompanyAssessmentsList from "./pages/CompanyAssessmentsList";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/my-assessments"} component={MyAssessments} />
+      <Route path={"/company-assessments"} component={CompanyAssessmentsList} />
       <Route path={"/company-setup"} component={CompanySetup} />
       <Route path={"/respondent-selection"} component={RespondentSelection} />
       <Route path={"/assessment"} component={Assessment} />

@@ -9,6 +9,11 @@
 - [x] Opção de finalizar avaliação antecipadamente
 - [x] Calcular percentual de conformidade com respondentes que completaram
 
+## Bugs Reportados
+
+- [x] Painel de administração não está acessível/visível
+- [x] Links únicos para respondentes não estão sendo gerados
+
 ## Bugs Corrigidos (Recentes)
 
 - [x] Erro ao finalizar a avaliação e clicar em "Enviar Avaliação" (corrigido tratamento de compliancePercentage e removído useQuery de dentro de async)

@@ -187,45 +187,56 @@ export default function AssessmentAdmin() {
           <CardHeader>
             <CardTitle>Lista de Respondentes</CardTitle>
             <CardDescription>
-              Clique no botão "Copiar Link" para gerar um link de acesso para o respondente
+              Copie o link abaixo e compartilhe com cada respondente
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {data.sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-slate-900">
-                        Respondente {session.respondentNumber}
-                      </span>
-                      {session.isCompleted === 1 ? (
-                        <Badge className="bg-green-100 text-green-800">
-                          Completado
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-orange-100 text-orange-800">
-                          Pendente
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-slate-500">
-                      Pontuação: {session.totalScore} pontos
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopyToken(session.accessToken || "")}
-                    disabled={!session.accessToken}
+            <div className="space-y-4">
+              {data.sessions.map((session) => {
+                const baseUrl = window.location.origin;
+                const respondentUrl = `${baseUrl}/respondent?token=${session.accessToken}`;
+
+                return (
+                  <div
+                    key={session.id}
+                    className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                   >
-                    {copiedToken === session.accessToken ? "✓ Copiado" : "Copiar Link"}
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-slate-900">
+                            Respondente {session.respondentNumber}
+                          </span>
+                          {session.isCompleted === 1 ? (
+                            <Badge className="bg-green-100 text-green-800">
+                              Completado
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-orange-100 text-orange-800">
+                              Pendente
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-500">
+                          Pontuação: {session.totalScore} pontos
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-100 p-3 rounded-lg mb-3 break-all font-mono text-sm text-slate-700">
+                      {respondentUrl}
+                    </div>
+
+                    <Button
+                      onClick={() => handleCopyToken(session.accessToken || "")}
+                      disabled={!session.accessToken}
+                      className="w-full"
+                    >
+                      {copiedToken === session.accessToken ? "✓ Link Copiado" : "Copiar Link"}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

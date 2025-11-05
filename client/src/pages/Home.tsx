@@ -13,6 +13,10 @@ export default function Home() {
     window.location.href = "/company-setup";
   };
 
+  const handleMyAssessments = () => {
+    window.location.href = "/my-assessments";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Navigation */}
@@ -61,13 +65,25 @@ export default function Home() {
             com 50 questões divididas em 3 pilares estratégicos.
           </p>
 
-          <Button
-            onClick={handleStartAssessment}
-            size="lg"
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg"
-          >
-            Iniciar Avaliação
-          </Button>
+          <div className="flex gap-4 justify-center">
+            <Button
+              onClick={handleStartAssessment}
+              size="lg"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg"
+            >
+              Iniciar Avaliação
+            </Button>
+            {isAuthenticated && (
+              <Button
+                onClick={handleMyAssessments}
+                size="lg"
+                variant="outline"
+                className="px-8 py-6 text-lg"
+              >
+                Minhas Avaliações
+              </Button>
+            )}
+          </div>
         </div>
       </section>
 
