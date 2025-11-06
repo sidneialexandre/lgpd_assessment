@@ -130,6 +130,19 @@ export const appRouter = router({
         const sessions = await getAssessmentRespondentSessions(input.assessmentId);
         const completedSessions = sessions.filter(s => s.isCompleted === 1);
         const pendingSessions = sessions.filter(s => s.isCompleted === 0);
+        const groups = await getCompanyGroups(assessment.companyId);
+        
+        const groupStats = groups.map(group => {
+          const groupSessions = sessions.filter(s => s.groupId === group.id);
+          const completedCount = groupSessions.filter(s => s.isCompleted === 1).length;
+          const pendingCount = group.respondentCount - completedCount;
+          return {
+            ...group,
+            completedCount,
+            pendingCount,
+            sessionsCreated: groupSessions.length,
+          };
+        });
 
         return {
           assessment,
@@ -139,6 +152,7 @@ export const appRouter = router({
           sessions,
           completedSessions,
           pendingSessions,
+          groups: groupStats,
         };
       }),
 
@@ -190,17 +204,11 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        // Save individual answers
         await saveIndividualAnswers(input.respondentSessionId, input.answers);
-
-        // Check if all respondents have completed
         const allCompleted = await checkAllRespondentsCompleted(input.assessmentId);
-
         if (allCompleted) {
-          // Calculate consolidated results
           await calculateConsolidatedResults(input.assessmentId);
         }
-
         return await getAssessmentById(input.assessmentId);
       }),
 
@@ -225,4 +233,3 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
-

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Copy, Check } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export default function AssessmentAdmin() {
@@ -100,7 +101,7 @@ export default function AssessmentAdmin() {
     );
   }
 
-  const progressPercentage = (data.completedRespondents / data.totalRespondents) * 100;
+  const progressPercentage = data.totalRespondents > 0 ? (data.completedRespondents / data.totalRespondents) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -182,6 +183,55 @@ export default function AssessmentAdmin() {
           </CardContent>
         </Card>
 
+        {/* Groups Configuration */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Configuração de Grupos</CardTitle>
+            <CardDescription>
+              Definição original de grupos e status de respondentes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.groups && data.groups.length > 0 ? (
+                data.groups.map((group: any) => (
+                  <div
+                    key={group.id}
+                    className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold text-slate-900">
+                          {group.groupName} - {group.departmentName}
+                        </h3>
+                        <p className="text-sm text-slate-500">
+                          Respondentes configurados: {group.respondentCount}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="flex-1">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm text-slate-600">Completados: {group.completedCount}</span>
+                          <span className="text-sm text-slate-600">Faltando: {group.pendingCount}</span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${(group.completedCount / group.respondentCount) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-slate-500">Nenhum grupo configurado</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Respondents List */}
         <Card className="mb-8">
           <CardHeader>
@@ -192,7 +242,7 @@ export default function AssessmentAdmin() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {data.sessions.map((session) => {
+              {data.sessions.map((session: any) => {
                 const baseUrl = window.location.origin;
                 const respondentUrl = `${baseUrl}/respondent?token=${session.accessToken}`;
 
@@ -231,8 +281,19 @@ export default function AssessmentAdmin() {
                       onClick={() => handleCopyToken(session.accessToken || "")}
                       disabled={!session.accessToken}
                       className="w-full"
+                      variant="outline"
                     >
-                      {copiedToken === session.accessToken ? "✓ Link Copiado" : "Copiar Link"}
+                      {copiedToken === session.accessToken ? (
+                        <>
+                          <Check className="w-4 h-4 mr-2" />
+                          Link Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copiar Link
+                        </>
+                      )}
                     </Button>
                   </div>
                 );
@@ -270,4 +331,3 @@ export default function AssessmentAdmin() {
     </div>
   );
 }
-

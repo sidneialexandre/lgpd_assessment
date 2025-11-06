@@ -446,8 +446,10 @@ export async function calculateConsolidatedResults(assessmentId: number): Promis
   }
 
   // Calculate compliance percentage
-  const maxScore = 100000;
-  const compliancePercentage = parseFloat(((totalScore / maxScore) * 100).toFixed(2));
+  // Maximum score per respondent is 10,000 (50 questions * 200 points each)
+  const maxScorePerRespondent = 10000;
+  const maxScore = maxScorePerRespondent * sessions.length;
+  const compliancePercentage = maxScore > 0 ? parseFloat(((totalScore / maxScore) * 100).toFixed(2)) : 0;
 
   // Update assessment with final results
   await db

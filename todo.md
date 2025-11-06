@@ -38,3 +38,14 @@
 
 
 
+
+
+## Ajustes Solicitados (Completados)
+
+- [x] Exibir configurações originais de grupos no painel de administração
+- [x] Gerar links para TODOS os respondentes na página de configuração
+- [x] Corrigir cálculo de pontuação (máximo 10.000 por respondente, não 100.000)
+- [x] Corrigir barra de progresso para considerar todos os respondentes
+- [x] Consertar botão finalizar avaliação
+- [x] Exibir respondentes faltantes por grupo
+

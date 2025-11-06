@@ -236,7 +236,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <p className="text-center mt-8 text-lg font-semibold">Máximo de pontos: <span className="text-2xl">100.000</span></p>
+          <p className="text-center mt-8 text-lg font-semibold">Máximo de pontos por respondente: <span className="text-2xl">10.000</span></p>
         </div>
       </section>
 
