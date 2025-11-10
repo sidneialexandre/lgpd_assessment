@@ -49,3 +49,14 @@
 - [x] Consertar botão finalizar avaliação
 - [x] Exibir respondentes faltantes por grupo
 
+
+
+## Novos Ajustes Solicitados (Completados)
+
+- [x] Adicionar acesso ao painel de seleção de respondentes no painel admin
+- [x] Implementar função de remover avaliação completamente do banco de dados
+- [x] Corrigir computação de avaliações no painel de visualização
+- [x] Corrigir barra de progresso para funcionar corretamente
+- [x] Consertar botão finalizar avaliação
+- [x] Gerar links na página de seleção de respondentes (antes da avaliação ser respondida)
+

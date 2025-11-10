@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Copy, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -14,6 +14,8 @@ export default function RespondentSelection() {
   const [selectedRespondent, setSelectedRespondent] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [generatedLinks, setGeneratedLinks] = useState<Record<number, { token: string; respondentNumber: number }>>({});
 
   // Get query parameters
   const searchParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
@@ -75,9 +77,9 @@ export default function RespondentSelection() {
     }
   }
 
-  const handleStartAssessment = async () => {
-    if (selectedGroup === null || selectedRespondent === null) {
-      setError("Por favor, selecione o grupo e o número do respondente");
+  const handleGenerateLink = async (respondentNumber: number) => {
+    if (selectedGroup === null) {
+      setError("Por favor, selecione o grupo primeiro");
       return;
     }
 
@@ -88,16 +90,38 @@ export default function RespondentSelection() {
       const session = await createSessionMutation.mutateAsync({
         assessmentId: parseInt(assessmentId || "0"),
         groupId: selectedGroup,
-        respondentNumber: selectedRespondent,
+        respondentNumber,
       });
 
-      // Redirect to assessment page with session info
-      setLocation(`/assessment?companyId=${companyId}&assessmentId=${assessmentId}&sessionId=${session.id}`);
+      setGeneratedLinks({
+        ...generatedLinks,
+        [respondentNumber]: {
+          token: session.accessToken || "",
+          respondentNumber,
+        },
+      });
+
+      // Refetch sessions to update the UI
+      getSessionsQuery.refetch();
     } catch (err) {
-      setError("Erro ao criar sessão de respondente. Por favor, tente novamente.");
+      setError("Erro ao gerar link. Por favor, tente novamente.");
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyLink = (token: string) => {
+    const baseUrl = window.location.origin;
+    const respondentUrl = `${baseUrl}/respondent?token=${token}`;
+    navigator.clipboard.writeText(respondentUrl);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
+
+  const handleBackToAdmin = () => {
+    if (assessmentId) {
+      setLocation(`/admin?id=${assessmentId}`);
     }
   };
 
@@ -106,8 +130,15 @@ export default function RespondentSelection() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Seleção de Respondente</h1>
-          <p className="text-gray-600">Escolha seu grupo e número de respondente para iniciar a avaliação</p>
+          <Button
+            variant="outline"
+            onClick={handleBackToAdmin}
+            className="mb-4"
+          >
+            ← Voltar ao Painel Admin
+          </Button>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Geração de Links para Respondentes</h1>
+          <p className="text-gray-600">Gere links de acesso para cada respondente antes de enviar a avaliação</p>
         </div>
 
         {/* Error Alert */}
@@ -122,31 +153,25 @@ export default function RespondentSelection() {
         <Card className="mb-8 bg-white shadow-lg">
           <CardHeader>
             <CardTitle>Selecione seu Grupo</CardTitle>
-            <CardDescription>Escolha o grupo/departamento ao qual você pertence</CardDescription>
+            <CardDescription>Escolha o grupo para o qual deseja gerar links de respondentes</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4">
               {groups.map((group) => {
                 const completedCount = completedByGroup[group.id] || 0;
                 const remainingCount = group.respondentCount - completedCount;
-                const isGroupComplete = remainingCount === 0;
 
                 return (
                   <button
                     key={group.id}
                     onClick={() => {
-                      if (!isGroupComplete) {
-                        setSelectedGroup(group.id);
-                        setSelectedRespondent(null);
-                      }
+                      setSelectedGroup(group.id);
+                      setSelectedRespondent(null);
                     }}
-                    disabled={isGroupComplete}
                     className={`p-4 border-2 rounded-lg text-left transition-all ${
                       selectedGroup === group.id
                         ? "border-blue-500 bg-blue-50"
-                        : isGroupComplete
-                          ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
-                          : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                        : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -157,9 +182,6 @@ export default function RespondentSelection() {
                           {completedCount} de {group.respondentCount} respondentes concluídos
                         </p>
                       </div>
-                      {isGroupComplete && (
-                        <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      )}
                     </div>
                   </button>
                 );
@@ -168,50 +190,85 @@ export default function RespondentSelection() {
           </CardContent>
         </Card>
 
-        {/* Respondent Selection */}
+        {/* Respondent Links Generation */}
         {selectedGroup !== null && (
-          <Card className="mb-8 bg-white shadow-lg">
+          <Card className="bg-white shadow-lg">
             <CardHeader>
-              <CardTitle>Selecione seu Número de Respondente</CardTitle>
+              <CardTitle>Gerar Links para Respondentes</CardTitle>
               <CardDescription>
-                Escolha um número disponível para o grupo {groups.find((g) => g.id === selectedGroup)?.groupName}
+                Clique em cada respondente para gerar seu link de acesso único
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="space-y-3">
                 {Array.from({ length: groups.find((g) => g.id === selectedGroup)?.respondentCount || 0 }).map(
                   (_, index) => {
                     const respondentNumber = index + 1;
-                    const isAlreadyCompleted = sessions.some(
-                      (s) => s.groupId === selectedGroup && s.respondentNumber === respondentNumber && s.isCompleted === 1
+                    const existingSession = sessions.find(
+                      (s) => s.groupId === selectedGroup && s.respondentNumber === respondentNumber
                     );
+                    const generatedLink = generatedLinks[respondentNumber];
+                    const hasLink = existingSession || generatedLink;
 
                     return (
-                      <button
+                      <div
                         key={respondentNumber}
-                        onClick={() => {
-                          if (!isAlreadyCompleted) {
-                            setSelectedRespondent(respondentNumber);
-                          }
-                        }}
-                        disabled={isAlreadyCompleted}
-                        className={`p-4 border-2 rounded-lg font-bold text-lg transition-all ${
-                          selectedRespondent === respondentNumber
-                            ? "border-blue-500 bg-blue-50 text-blue-600"
-                            : isAlreadyCompleted
-                              ? "border-green-200 bg-green-50 text-green-600 opacity-50 cursor-not-allowed"
-                              : "border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50"
-                        }`}
+                        className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       >
-                        {isAlreadyCompleted ? (
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-gray-900">
+                                Respondente {respondentNumber}
+                              </span>
+                              {existingSession?.isCompleted === 1 ? (
+                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                  Completado
+                                </span>
+                              ) : hasLink ? (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Link Gerado
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+
+                        {hasLink && (existingSession || generatedLink) ? (
                           <>
-                            <CheckCircle2 className="w-5 h-5 mx-auto mb-1" />
-                            <div className="text-xs">Concluído</div>
+                            <div className="bg-gray-100 p-3 rounded-lg mb-3 break-all font-mono text-sm text-gray-700">
+                              {window.location.origin}/respondent?token={existingSession?.accessToken || generatedLink?.token}
+                            </div>
+                            <Button
+                              onClick={() => handleCopyLink(existingSession?.accessToken || generatedLink?.token || "")}
+                              disabled={!existingSession?.accessToken && !generatedLink?.token}
+                              variant="outline"
+                              className="w-full"
+                            >
+                              {copiedToken === (existingSession?.accessToken || generatedLink?.token) ? (
+                                <>
+                                  <Check className="w-4 h-4 mr-2" />
+                                  Link Copiado
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Copiar Link
+                                </>
+                              )}
+                            </Button>
                           </>
                         ) : (
-                          `Respondente ${respondentNumber}`
-                        )}
-                      </button>
+                          <Button
+                            onClick={() => handleGenerateLink(respondentNumber)}
+                            disabled={loading || (existingSession && (existingSession as any).isCompleted === 1)}
+                            className="w-full bg-blue-600 hover:bg-blue-700"
+                          >
+                            {loading ? "Gerando..." : "Gerar Link"}
+                          </Button>
+                        )
+                      }
+                      </div>
                     );
                   }
                 )}
@@ -221,24 +278,16 @@ export default function RespondentSelection() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-4">
+        <div className="mt-8 flex gap-4">
           <Button
             variant="outline"
-            onClick={() => setLocation("/")}
+            onClick={handleBackToAdmin}
             className="flex-1"
           >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleStartAssessment}
-            disabled={selectedGroup === null || selectedRespondent === null || loading}
-            className="flex-1 bg-green-600 hover:bg-green-700"
-          >
-            {loading ? "Processando..." : "Iniciar Avaliação"}
+            Voltar ao Painel Admin
           </Button>
         </div>
       </div>
     </div>
   );
 }
-

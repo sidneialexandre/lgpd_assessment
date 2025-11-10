@@ -473,3 +473,42 @@ export async function getAssessmentAnswers(assessmentId: number): Promise<Answer
     .orderBy(answers.questionId);
 }
 
+
+
+
+// Delete assessment and all related data
+export async function deleteAssessment(assessmentId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Get all respondent sessions for this assessment
+  const sessions = await db
+    .select()
+    .from(respondentSessions)
+    .where(eq(respondentSessions.assessmentId, assessmentId));
+
+  // Delete individual answers for all sessions
+  for (const session of sessions) {
+    await db
+      .delete(individualAnswers)
+      .where(eq(individualAnswers.respondentSessionId, session.id));
+  }
+
+  // Delete respondent sessions
+  await db
+    .delete(respondentSessions)
+    .where(eq(respondentSessions.assessmentId, assessmentId));
+
+  // Delete consolidated answers
+  await db
+    .delete(answers)
+    .where(eq(answers.assessmentId, assessmentId));
+
+  // Delete assessment
+  await db
+    .delete(assessments)
+    .where(eq(assessments.id, assessmentId));
+}
+

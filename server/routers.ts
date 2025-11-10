@@ -22,7 +22,8 @@ import {
   getIndividualAnswers,
   checkAllRespondentsCompleted,
   calculateConsolidatedResults,
-  getAssessmentAnswers 
+  getAssessmentAnswers,
+  deleteAssessment
 } from "./db";
 
 export const appRouter = router({
@@ -161,6 +162,13 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await calculateConsolidatedResults(input.assessmentId);
         return await getAssessmentById(input.assessmentId);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteAssessment(input.assessmentId);
+        return { success: true };
       }),
   }),
 
