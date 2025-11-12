@@ -60,3 +60,10 @@
 - [x] Consertar botão finalizar avaliação
 - [x] Gerar links na página de seleção de respondentes (antes da avaliação ser respondida)
 
+
+
+
+## Bugs Reportados (Corrigidos)
+
+- [x] Erro ao finalizar avaliação via link: "Dados da sessão não encontrados"
+

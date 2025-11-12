@@ -36,25 +36,38 @@ export default function Assessment() {
   const companyId = searchParams.get("companyId");
   const assessmentId = searchParams.get("assessmentId");
   const sessionId = searchParams.get("sessionId");
+  const token = searchParams.get("token");
 
-  const getCompanyQuery = trpc.company.getById.useQuery(
-    { companyId: parseInt(companyId || "0") },
-    { enabled: !!companyId }
-  );
-
-  const getGroupsQuery = trpc.group.getByCompany.useQuery(
-    { companyId: parseInt(companyId || "0") },
-    { enabled: !!companyId }
+  // Get session by token if available, otherwise by sessionId
+  const getSessionByTokenQuery = trpc.respondent.getByToken.useQuery(
+    { accessToken: token || "" },
+    { enabled: !!token }
   );
 
   const getSessionQuery = trpc.respondent.getSession.useQuery(
     { sessionId: parseInt(sessionId || "0") },
-    { enabled: !!sessionId }
+    { enabled: !!sessionId && !token }
+  );
+
+  // Use session from token or sessionId
+  const currentSessionData = token ? getSessionByTokenQuery.data : getSessionQuery.data;
+  const resolvedSessionId = currentSessionData?.id ? String(currentSessionData.id) : sessionId;
+  const resolvedAssessmentId = currentSessionData?.assessmentId ? String(currentSessionData.assessmentId) : assessmentId;
+  const resolvedCompanyId = companyId; // CompanyId comes from query param
+
+  const getCompanyQuery = trpc.company.getById.useQuery(
+    { companyId: parseInt(resolvedCompanyId || "0") },
+    { enabled: !!resolvedCompanyId }
+  );
+
+  const getGroupsQuery = trpc.group.getByCompany.useQuery(
+    { companyId: parseInt(resolvedCompanyId || "0") },
+    { enabled: !!resolvedCompanyId }
   );
 
   const checkCompletionQuery = trpc.respondent.checkCompletion.useQuery(
-    { assessmentId: parseInt(assessmentId || "0") },
-    { enabled: !!assessmentId, refetchInterval: 2000 } // Poll every 2 seconds
+    { assessmentId: parseInt(resolvedAssessmentId || "0") },
+    { enabled: !!resolvedAssessmentId, refetchInterval: 2000 }
   );
 
   const saveAnswersMutation = trpc.respondent.saveAnswers.useMutation();
@@ -93,7 +106,7 @@ export default function Assessment() {
       return;
     }
 
-    if (!sessionId || !assessmentId || !companyId) {
+    if (!resolvedSessionId || !resolvedAssessmentId || !resolvedCompanyId) {
       alert("Erro: Dados da sessão não encontrados.");
       return;
     }
@@ -114,8 +127,8 @@ export default function Assessment() {
 
       // Save answers
       const assessment = await saveAnswersMutation.mutateAsync({
-        respondentSessionId: parseInt(sessionId),
-        assessmentId: parseInt(assessmentId),
+        respondentSessionId: parseInt(resolvedSessionId),
+        assessmentId: parseInt(resolvedAssessmentId),
         answers: answersData,
       });
 
@@ -170,7 +183,9 @@ export default function Assessment() {
     );
   }
 
-  if (getCompanyQuery.isLoading || getGroupsQuery.isLoading || getSessionQuery.isLoading) {
+  const isLoadingSession = token ? getSessionByTokenQuery.isLoading : getSessionQuery.isLoading;
+
+  if (getCompanyQuery.isLoading || getGroupsQuery.isLoading || isLoadingSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -182,7 +197,7 @@ export default function Assessment() {
     );
   }
 
-  const currentSession = getSessionQuery.data;
+  const currentSession = currentSessionData;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
