@@ -49,11 +49,17 @@ export default function Assessment() {
     { enabled: !!sessionId && !token }
   );
 
+  // Get companyId by token if needed
+  const getCompanyIdByTokenQuery = trpc.respondent.getCompanyIdByToken.useQuery(
+    { accessToken: token || "" },
+    { enabled: !!token }
+  );
+
   // Use session from token or sessionId
   const currentSessionData = token ? getSessionByTokenQuery.data : getSessionQuery.data;
   const resolvedSessionId = currentSessionData?.id ? String(currentSessionData.id) : sessionId;
   const resolvedAssessmentId = currentSessionData?.assessmentId ? String(currentSessionData.assessmentId) : assessmentId;
-  const resolvedCompanyId = companyId; // CompanyId comes from query param
+  const resolvedCompanyId = token ? (getCompanyIdByTokenQuery.data?.companyId ? String(getCompanyIdByTokenQuery.data.companyId) : undefined) : companyId;
 
   const getCompanyQuery = trpc.company.getById.useQuery(
     { companyId: parseInt(resolvedCompanyId || "0") },
@@ -184,8 +190,9 @@ export default function Assessment() {
   }
 
   const isLoadingSession = token ? getSessionByTokenQuery.isLoading : getSessionQuery.isLoading;
+  const isLoadingCompanyId = token ? getCompanyIdByTokenQuery.isLoading : false;
 
-  if (getCompanyQuery.isLoading || getGroupsQuery.isLoading || isLoadingSession) {
+  if (getCompanyQuery.isLoading || getGroupsQuery.isLoading || isLoadingSession || isLoadingCompanyId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <Card className="w-full max-w-md">

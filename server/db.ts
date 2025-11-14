@@ -512,3 +512,20 @@ export async function deleteAssessment(assessmentId: number): Promise<void> {
     .where(eq(assessments.id, assessmentId));
 }
 
+
+
+
+export async function getCompanyIdByToken(accessToken: string): Promise<number | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select({ companyId: assessments.companyId })
+    .from(respondentSessions)
+    .innerJoin(assessments, eq(respondentSessions.assessmentId, assessments.id))
+    .where(eq(respondentSessions.accessToken, accessToken))
+    .limit(1);
+
+  return result.length > 0 ? result[0].companyId : undefined;
+}
+

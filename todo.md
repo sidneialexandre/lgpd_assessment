@@ -67,3 +67,12 @@
 
 - [x] Erro ao finalizar avaliação via link: "Dados da sessão não encontrados"
 
+
+
+## Problemas Críticos Reportados (Corrigidos)
+
+- [x] Deletar avaliação não permite criar nova para mesma empresa
+- [x] Erro ao finalizar avaliação via link: dados de sessão não encontrados
+- [x] Respondente tem acesso ao painel admin (deve ser apenas admin)
+- [x] Link do respondente deve ir direto para avaliação, não para home
+

@@ -1,0 +1,1 @@
+-- Migration 0005 - Fix accessToken column

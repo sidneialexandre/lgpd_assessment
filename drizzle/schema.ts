@@ -73,8 +73,8 @@ export type InsertAssessment = typeof assessments.$inferInsert;
 // Respondent sessions table to track individual respondents
 export const respondentSessions = mysqlTable("respondentSessions", {
   id: int("id").autoincrement().primaryKey(),
-  assessmentId: int("assessmentId").notNull().references(() => assessments.id),
-  groupId: int("groupId").notNull().references(() => groups.id),
+  assessmentId: int("assessmentId").notNull().references(() => assessments.id, { onDelete: "cascade" }),
+  groupId: int("groupId").notNull().references(() => groups.id, { onDelete: "cascade" }),
   respondentNumber: int("respondentNumber").notNull(), // Which respondent in the group (1, 2, 3, etc)
   accessToken: varchar("accessToken", { length: 255 }), // Unique token for respondent access
   isCompleted: int("isCompleted").default(0).notNull(), // 0 = not completed, 1 = completed
@@ -89,7 +89,7 @@ export type InsertRespondentSession = typeof respondentSessions.$inferInsert;
 // Individual answers table to store responses per respondent
 export const individualAnswers = mysqlTable("individualAnswers", {
   id: int("id").autoincrement().primaryKey(),
-  respondentSessionId: int("respondentSessionId").notNull().references(() => respondentSessions.id),
+  respondentSessionId: int("respondentSessionId").notNull().references(() => respondentSessions.id, { onDelete: "cascade" }),
   questionId: int("questionId").notNull(),
   selectedAnswer: varchar("selectedAnswer", { length: 1 }).notNull(), // A, B, C, D
   score: int("score").notNull(), // 100, 65, 35, 0
@@ -102,7 +102,7 @@ export type InsertIndividualAnswer = typeof individualAnswers.$inferInsert;
 // Consolidated answers table to store aggregated responses
 export const answers = mysqlTable("answers", {
   id: int("id").autoincrement().primaryKey(),
-  assessmentId: int("assessmentId").notNull().references(() => assessments.id),
+  assessmentId: int("assessmentId").notNull().references(() => assessments.id, { onDelete: "cascade" }),
   questionId: int("questionId").notNull(),
   selectedAnswer: varchar("selectedAnswer", { length: 1 }).notNull(), // A, B, C, D
   score: int("score").notNull(), // 100, 65, 35, 0

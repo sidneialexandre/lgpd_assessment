@@ -13,32 +13,71 @@ import RespondentAccess from "./pages/RespondentAccess";
 import MyAssessments from "./pages/MyAssessments";
 import CompanyAssessmentsList from "./pages/CompanyAssessmentsList";
 import RespondentLinksGeneration from "./pages/RespondentLinksGeneration";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+// Protected route component for authenticated users only
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="w-full max-w-md border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <h2 className="text-lg font-semibold text-red-900 mb-4">Acesso Restrito</h2>
+            <p className="text-red-800 mb-4">Você precisa estar autenticado para acessar esta página.</p>
+            <Button
+              onClick={() => window.location.href = "/"}
+              className="w-full"
+            >
+              Voltar ao Início
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return <Component />;
+}
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      {/* Public routes */}
       <Route path={"/"} component={Home} />
-      <Route path={"/my-assessments"} component={MyAssessments} />
-      <Route path={"/company-assessments"} component={CompanyAssessmentsList} />
-      <Route path={"/company-setup"} component={CompanySetup} />
-      <Route path={"/respondent-selection"} component={RespondentSelection} />
-      <Route path={"/assessment"} component={Assessment} />
-      <Route path={"/assessment-admin"} component={AssessmentAdmin} />
       <Route path={"/respondent"} component={RespondentAccess} />
-      <Route path={"/respondent-links"} component={RespondentLinksGeneration} />
-      <Route path={"/admin"} component={AssessmentAdmin} />
+      <Route path={"/assessment"} component={Assessment} />
+      
+      {/* Protected routes - require authentication */}
+      <Route path={"/my-assessments"} component={() => <ProtectedRoute component={MyAssessments} />} />
+      <Route path={"/company-assessments"} component={() => <ProtectedRoute component={CompanyAssessmentsList} />} />
+      <Route path={"/company-setup"} component={() => <ProtectedRoute component={CompanySetup} />} />
+      <Route path={"/respondent-selection"} component={() => <ProtectedRoute component={RespondentSelection} />} />
+      <Route path={"/assessment-admin"} component={() => <ProtectedRoute component={AssessmentAdmin} />} />
+      <Route path={"/respondent-links"} component={() => <ProtectedRoute component={RespondentLinksGeneration} />} />
+      <Route path={"/admin"} component={() => <ProtectedRoute component={AssessmentAdmin} />} />
+      
+      {/* Error routes */}
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
   return (

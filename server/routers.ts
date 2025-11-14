@@ -16,8 +16,9 @@ import {
   getCompanyAssessments,
   createRespondentSession,
   getRespondentSession,
-  getRespondentSessionByToken,
   getAssessmentRespondentSessions,
+  getRespondentSessionByToken,
+  getCompanyIdByToken,
   saveIndividualAnswers,
   getIndividualAnswers,
   checkAllRespondentsCompleted,
@@ -235,6 +236,13 @@ export const appRouter = router({
       .input(z.object({ accessToken: z.string() }))
       .query(async ({ input }) => {
         return await getRespondentSessionByToken(input.accessToken);
+      }),
+
+    getCompanyIdByToken: publicProcedure
+      .input(z.object({ accessToken: z.string() }))
+      .query(async ({ input }) => {
+        const companyId = await getCompanyIdByToken(input.accessToken);
+        return { companyId };
       }),
   }),
 
