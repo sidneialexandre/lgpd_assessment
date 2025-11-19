@@ -1,4 +1,4 @@
-import { eq, and, sum } from "drizzle-orm";
+import { eq, and, sum, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, companies, groups, assessments, answers, 
@@ -527,5 +527,36 @@ export async function getCompanyIdByToken(accessToken: string): Promise<number |
     .limit(1);
 
   return result.length > 0 ? result[0].companyId : undefined;
+}
+
+
+
+
+export async function getLastAssessmentWithGroups(companyId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  // Get the last assessment for the company
+  const assessmentResult = await db
+    .select()
+    .from(assessments)
+    .where(eq(assessments.companyId, companyId))
+    .orderBy(desc(assessments.createdAt))
+    .limit(1);
+
+  if (assessmentResult.length === 0) return undefined;
+
+  const assessment = assessmentResult[0];
+
+  // Get groups for this company
+  const groupsResult = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.companyId, companyId));
+
+  return {
+    assessment,
+    groups: groupsResult,
+  };
 }
 

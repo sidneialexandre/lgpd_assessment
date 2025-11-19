@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,10 +28,54 @@ export default function CompanySetup() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
-  const createCompanyMutation = trpc.company.create.useMutation();
+  const createCompanyMutation = trpc.company.createOrGet.useMutation();
   const createGroupMutation = trpc.group.create.useMutation();
   const createAssessmentMutation = trpc.assessment.create.useMutation();
+  const getCompanyQuery = trpc.company.getById.useQuery(
+    { companyId: companyId || 0 },
+    { enabled: !!companyId }
+  );
+  const getLastAssessmentDataQuery = trpc.assessment.getLastAssessmentData.useQuery(
+    { companyId: companyId || 0 },
+    { enabled: !!companyId }
+  );
+
+  // Load companyId from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cId = params.get("companyId");
+    if (cId) {
+      setCompanyId(parseInt(cId));
+      setIsLoadingData(true);
+    }
+  }, []);
+
+  // Pre-fill data when company and last assessment data are loaded
+  useEffect(() => {
+    if (companyId && getCompanyQuery.data && getLastAssessmentDataQuery.data) {
+      const company = getCompanyQuery.data;
+      const { groups: lastGroups } = getLastAssessmentDataQuery.data;
+
+      // Pre-fill company data
+      setCnpj(company.cnpj);
+      setRazaoSocial(company.razaoSocial);
+
+      // Pre-fill groups
+      if (lastGroups && lastGroups.length > 0) {
+        const formattedGroups = lastGroups.map(g => ({
+          groupName: g.groupName,
+          departmentName: g.departmentName,
+          respondentCount: g.respondentCount,
+        }));
+        setGroups(formattedGroups);
+      }
+
+      setIsLoadingData(false);
+    }
+  }, [companyId, getCompanyQuery.data, getLastAssessmentDataQuery.data]);
 
   if (!isAuthenticated) {
     return (
@@ -109,7 +153,7 @@ export default function CompanySetup() {
     setError("");
 
     try {
-      // Create company
+      // Create or get company
       const company = await createCompanyMutation.mutateAsync({
         cnpj: cnpj.replace(/\D/g, ""),
         razaoSocial,
@@ -139,6 +183,17 @@ export default function CompanySetup() {
       setLoading(false);
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando dados da última avaliação...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">

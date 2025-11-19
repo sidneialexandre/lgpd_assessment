@@ -76,3 +76,12 @@
 - [x] Respondente tem acesso ao painel admin (deve ser apenas admin)
 - [x] Link do respondente deve ir direto para avaliação, não para home
 
+
+
+
+## Novos Problemas Reportados (Corrigidos)
+
+- [x] Respondente autenticado tem acesso ao painel admin (deve ter acesso apenas ao questionário)
+- [x] Erro ao criar nova avaliação para empresa existente
+- [x] Pré-preenchimento de dados da última avaliação não funciona
+

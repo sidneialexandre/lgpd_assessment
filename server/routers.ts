@@ -14,6 +14,7 @@ import {
   createAssessment, 
   getAssessmentById, 
   getCompanyAssessments,
+  getLastAssessmentWithGroups,
   createRespondentSession,
   getRespondentSession,
   getAssessmentRespondentSessions,
@@ -42,6 +43,21 @@ export const appRouter = router({
   }),
 
   company: router({
+    createOrGet: protectedProcedure
+      .input(
+        z.object({
+          cnpj: z.string().min(14).max(18),
+          razaoSocial: z.string().min(1),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const existing = await getCompanyByCNPJ(input.cnpj);
+        if (existing) {
+          return existing;
+        }
+        return await createCompany(ctx.user.id, input.cnpj, input.razaoSocial);
+      }),
+
     create: protectedProcedure
       .input(
         z.object({
@@ -52,6 +68,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         return await createCompany(ctx.user.id, input.cnpj, input.razaoSocial);
       }),
+
 
     getByCNPJ: protectedProcedure
       .input(z.object({ cnpj: z.string() }))
@@ -170,6 +187,12 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await deleteAssessment(input.assessmentId);
         return { success: true };
+      }),
+
+    getLastAssessmentData: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(async ({ input }) => {
+        return await getLastAssessmentWithGroups(input.companyId);
       }),
   }),
 
