@@ -85,3 +85,12 @@
 - [x] Erro ao criar nova avaliação para empresa existente
 - [x] Pré-preenchimento de dados da última avaliação não funciona
 
+
+
+## Melhorias Solicitadas (Completadas)
+
+- [x] Verificar avaliações anteriores apenas se existirem (evitar loops)
+- [x] Implementar sistema de roles: admin (acesso completo) e respondente (apenas questionário)
+- [x] Restringir acesso de respondentes autenticados apenas ao questionário
+- [x] Criar painel de login/cadastro para respondentes
+- [x] Respondentes devem preencher questionário e enviar respostas sem acesso ao painel admin

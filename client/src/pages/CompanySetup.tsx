@@ -40,7 +40,7 @@ export default function CompanySetup() {
   );
   const getLastAssessmentDataQuery = trpc.assessment.getLastAssessmentData.useQuery(
     { companyId: companyId || 0 },
-    { enabled: !!companyId }
+    { enabled: !!companyId && getCompanyQuery.data !== undefined }
   );
 
   // Load companyId from URL
@@ -53,24 +53,26 @@ export default function CompanySetup() {
     }
   }, []);
 
-  // Pre-fill data when company and last assessment data are loaded
+  // Pre-fill data when company is loaded
   useEffect(() => {
-    if (companyId && getCompanyQuery.data && getLastAssessmentDataQuery.data) {
+    if (companyId && getCompanyQuery.data) {
       const company = getCompanyQuery.data;
-      const { groups: lastGroups } = getLastAssessmentDataQuery.data;
-
+      
       // Pre-fill company data
       setCnpj(company.cnpj);
       setRazaoSocial(company.razaoSocial);
 
-      // Pre-fill groups
-      if (lastGroups && lastGroups.length > 0) {
-        const formattedGroups = lastGroups.map(g => ({
-          groupName: g.groupName,
-          departmentName: g.departmentName,
-          respondentCount: g.respondentCount,
-        }));
-        setGroups(formattedGroups);
+      // Only load last assessment data if it exists
+      if (getLastAssessmentDataQuery.data) {
+        const { groups: lastGroups } = getLastAssessmentDataQuery.data;
+        if (lastGroups && lastGroups.length > 0) {
+          const formattedGroups = lastGroups.map(g => ({
+            groupName: g.groupName,
+            departmentName: g.departmentName,
+            respondentCount: g.respondentCount,
+          }));
+          setGroups(formattedGroups);
+        }
       }
 
       setIsLoadingData(false);
@@ -184,12 +186,12 @@ export default function CompanySetup() {
     }
   };
 
-  if (isLoadingData) {
+  if (isLoadingData && getCompanyQuery.isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando dados da última avaliação...</p>
+          <p className="text-gray-600">Carregando dados da empresa...</p>
         </div>
       </div>
     );
