@@ -44,13 +44,26 @@ export default function CompanySetup() {
     { enabled: !!companyId && getCompanyQuery.data !== undefined }
   );
 
-  // Load companyId from URL
+  // Load companyId from URL - only runs once on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const cId = params.get("companyId");
     if (cId) {
       setCompanyId(parseInt(cId));
       setIsLoadingData(true);
+      setHasLoadedGroups(false);
+    } else {
+      // No company ID means this is a new assessment - reset everything
+      setCompanyId(null);
+      setCnpj("");
+      setRazaoSocial("");
+      setGroups([]);
+      setNewGroup({
+        groupName: "G1",
+        departmentName: "",
+        respondentCount: 1,
+      });
+      setHasLoadedGroups(true); // Mark as loaded to prevent further processing
     }
   }, []);
 
@@ -63,6 +76,9 @@ export default function CompanySetup() {
       setCnpj(company.cnpj);
       setRazaoSocial(company.razaoSocial);
 
+      // IMPORTANT: Reset groups first to avoid duplicates
+      setGroups([]);
+
       // Only load last assessment data if it exists
       if (getLastAssessmentDataQuery.data) {
         const { groups: lastGroups } = getLastAssessmentDataQuery.data;
@@ -73,10 +89,31 @@ export default function CompanySetup() {
             respondentCount: g.respondentCount,
           }));
           setGroups(formattedGroups);
-          setHasLoadedGroups(true);
+          // Set next group number based on loaded groups
+          const nextGroupNumber = formattedGroups.length + 1;
+          setNewGroup({
+            groupName: `G${nextGroupNumber}`,
+            departmentName: "",
+            respondentCount: 1,
+          });
+        } else {
+          // No previous groups
+          setNewGroup({
+            groupName: "G1",
+            departmentName: "",
+            respondentCount: 1,
+          });
         }
+      } else {
+        // No assessment data
+        setNewGroup({
+          groupName: "G1",
+          departmentName: "",
+          respondentCount: 1,
+        });
       }
 
+      setHasLoadedGroups(true);
       setIsLoadingData(false);
     }
   }, [companyId, getCompanyQuery.data, getLastAssessmentDataQuery.data, hasLoadedGroups]);
@@ -367,4 +404,3 @@ export default function CompanySetup() {
     </div>
   );
 }
-

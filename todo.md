@@ -110,3 +110,10 @@
 - [x] Função `getRespondentSessionsByEmail` no backend para buscar respondentes
 - [x] Rota `/respondent-dashboard` no App.tsx
 - [x] Atualização de Home.tsx para mostrar botão "Minhas Avaliações" para respondentes
+
+
+## Correção Adicional - Duplicação de Grupos (Sessão Atual)
+
+- [x] Duplicação de grupos ao clicar em "Próximo Passo" - Corrigido resetando grupos ANTES de carregar dados pré-preenchidos no segundo useEffect
+- [x] Duplicação ao deletar e reiniciar avaliação - Corrigido resetando estado completo quando não há companyId na URL
+- [x] Lógica de newGroup - Atualizada para calcular corretamente o número do próximo grupo após carregar dados
