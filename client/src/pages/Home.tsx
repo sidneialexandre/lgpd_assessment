@@ -87,10 +87,15 @@ export default function Home() {
                 </Button>
               </>
             ) : isAuthenticated ? (
-              <div className="text-center">
-                <p className="text-gray-600 mb-4">Voce esta logado como respondente.</p>
-                <p className="text-sm text-gray-500">Aguarde o link de acesso a avaliacao.</p>
-              </div>
+              <>
+                <Button
+                  onClick={() => (window.location.href = "/respondent-dashboard")}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg"
+                >
+                  Minhas Avaliacoes
+                </Button>
+              </>
             ) : (
               <Button
                 onClick={() => (window.location.href = getLoginUrl())}

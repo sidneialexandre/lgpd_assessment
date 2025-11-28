@@ -25,7 +25,8 @@ import {
   checkAllRespondentsCompleted,
   calculateConsolidatedResults,
   getAssessmentAnswers,
-  deleteAssessment
+  deleteAssessment,
+  getRespondentSessionsByEmail
 } from "./db";
 
 export const appRouter = router({
@@ -148,8 +149,10 @@ export const appRouter = router({
 
         const sessions = await getAssessmentRespondentSessions(input.assessmentId);
         const completedSessions = sessions.filter(s => s.isCompleted === 1);
-        const pendingSessions = sessions.filter(s => s.isCompleted === 0);
         const groups = await getCompanyGroups(assessment.companyId);
+        
+        let totalExpectedRespondents = 0;
+        groups.forEach(g => totalExpectedRespondents += g.respondentCount);
         
         const groupStats = groups.map(group => {
           const groupSessions = sessions.filter(s => s.groupId === group.id);
@@ -163,14 +166,15 @@ export const appRouter = router({
           };
         });
 
+        const totalPendingRespondents = totalExpectedRespondents - completedSessions.length;
+
         return {
           assessment,
-          totalRespondents: sessions.length,
+          totalRespondents: totalExpectedRespondents,
           completedRespondents: completedSessions.length,
-          pendingRespondents: pendingSessions.length,
+          pendingRespondents: totalPendingRespondents,
           sessions,
           completedSessions,
-          pendingSessions,
           groups: groupStats,
         };
       }),
@@ -267,6 +271,10 @@ export const appRouter = router({
         const companyId = await getCompanyIdByToken(input.accessToken);
         return { companyId };
       }),
+
+    getAvailableAssessments: protectedProcedure.query(async ({ ctx }) => {
+      return await getRespondentSessionsByEmail(ctx.user.email || "");
+    }),
   }),
 
 });

@@ -13,6 +13,7 @@ import RespondentAccess from "./pages/RespondentAccess";
 import MyAssessments from "./pages/MyAssessments";
 import CompanyAssessmentsList from "./pages/CompanyAssessmentsList";
 import RespondentLinksGeneration from "./pages/RespondentLinksGeneration";
+import RespondentDashboard from "./pages/RespondentDashboard";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,7 @@ function Router() {
       
       {/* Protected routes - require authentication */}
       <Route path={"/my-assessments"} component={() => <ProtectedRoute component={MyAssessments} />} />
+      <Route path={"/respondent-dashboard"} component={() => <ProtectedRoute component={RespondentDashboard} />} />
       
       {/* Admin-only routes */}
       <Route path={"/company-assessments"} component={() => <AdminRoute component={CompanyAssessmentsList} />} />

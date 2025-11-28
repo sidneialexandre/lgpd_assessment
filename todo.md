@@ -94,3 +94,19 @@
 - [x] Restringir acesso de respondentes autenticados apenas ao questionário
 - [x] Criar painel de login/cadastro para respondentes
 - [x] Respondentes devem preencher questionário e enviar respostas sem acesso ao painel admin
+
+
+## Bugs Críticos Corrigidos (Sessão Atual)
+
+- [x] Duplicação de grupos em CompanySetup - Adicionada flag `hasLoadedGroups` para evitar múltiplas execuções do useEffect
+- [x] Link de respondente não exibido após login - Criada página RespondentDashboard que mostra links de avaliação disponíveis
+- [x] Contagem de respondentes não atualizando - Corrigido cálculo em `getWithDetails` para usar número esperado de respondentes por grupo
+- [x] Barra de progresso não atualizando - Corrigido com a atualização anterior do cálculo de respondentes
+
+## Novas Funcionalidades Implementadas (Sessão Atual)
+
+- [x] Página RespondentDashboard para respondentes autenticados verem seus links
+- [x] Procedimento `respondent.getAvailableAssessments` para buscar avaliações disponíveis
+- [x] Função `getRespondentSessionsByEmail` no backend para buscar respondentes
+- [x] Rota `/respondent-dashboard` no App.tsx
+- [x] Atualização de Home.tsx para mostrar botão "Minhas Avaliações" para respondentes

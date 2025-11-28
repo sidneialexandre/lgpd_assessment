@@ -560,3 +560,35 @@ export async function getLastAssessmentWithGroups(companyId: number) {
   };
 }
 
+
+// Get respondent sessions with assessment and company details by email
+export async function getRespondentSessionsByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // First, find all assessments where respondent sessions have access tokens
+  // We'll return all available assessments for respondents to access
+  // Since respondents don't have a user account, we'll return all active assessments
+  // and let them access via token
+  
+  const sessions = await db
+    .select({
+      id: respondentSessions.id,
+      accessToken: respondentSessions.accessToken,
+      assessmentId: respondentSessions.assessmentId,
+      groupId: respondentSessions.groupId,
+      respondentNumber: respondentSessions.respondentNumber,
+      isCompleted: respondentSessions.isCompleted,
+      company: companies,
+      assessment: assessments,
+      group: groups,
+    })
+    .from(respondentSessions)
+    .innerJoin(assessments, eq(respondentSessions.assessmentId, assessments.id))
+    .innerJoin(companies, eq(assessments.companyId, companies.id))
+    .innerJoin(groups, eq(respondentSessions.groupId, groups.id))
+    .where(eq(respondentSessions.isCompleted, 0)) // Only incomplete assessments
+    .orderBy(respondentSessions.createdAt);
+
+  return sessions;
+}

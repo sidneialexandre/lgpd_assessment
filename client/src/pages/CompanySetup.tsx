@@ -30,6 +30,7 @@ export default function CompanySetup() {
   const [loading, setLoading] = useState(false);
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [hasLoadedGroups, setHasLoadedGroups] = useState(false);
 
   const createCompanyMutation = trpc.company.createOrGet.useMutation();
   const createGroupMutation = trpc.group.create.useMutation();
@@ -55,7 +56,7 @@ export default function CompanySetup() {
 
   // Pre-fill data when company is loaded
   useEffect(() => {
-    if (companyId && getCompanyQuery.data) {
+    if (companyId && getCompanyQuery.data && !hasLoadedGroups) {
       const company = getCompanyQuery.data;
       
       // Pre-fill company data
@@ -72,12 +73,13 @@ export default function CompanySetup() {
             respondentCount: g.respondentCount,
           }));
           setGroups(formattedGroups);
+          setHasLoadedGroups(true);
         }
       }
 
       setIsLoadingData(false);
     }
-  }, [companyId, getCompanyQuery.data, getLastAssessmentDataQuery.data]);
+  }, [companyId, getCompanyQuery.data, getLastAssessmentDataQuery.data, hasLoadedGroups]);
 
   if (!isAuthenticated) {
     return (
