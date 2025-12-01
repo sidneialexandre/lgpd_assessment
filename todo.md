@@ -117,3 +117,17 @@
 - [x] Duplicação de grupos ao clicar em "Próximo Passo" - Corrigido resetando grupos ANTES de carregar dados pré-preenchidos no segundo useEffect
 - [x] Duplicação ao deletar e reiniciar avaliação - Corrigido resetando estado completo quando não há companyId na URL
 - [x] Lógica de newGroup - Atualizada para calcular corretamente o número do próximo grupo após carregar dados
+
+
+## Bug Crítico - Duplicação de Grupos ao Deletar/Reiniciar (Sessão Atual)
+
+- [x] Grupos estão duplicando ao deletar avaliação e criar nova para mesma empresa - CORRIGIDO
+- [x] Máximo de 6 grupos não está sendo respeitado ao carregar dados anteriores - CORRIGIDO
+- [x] Grupos da avaliação anterior estão migrando para nova avaliação com duplicação - CORRIGIDO
+
+## Correções Implementadas
+
+- [x] Função `getLastAssessmentWithGroups` - Agora retorna apenas grupos usados na última avaliação
+- [x] Função `getWithDetails` - Agora filtra grupos para apenas os usados na avaliação atual
+- [x] Frontend CompanySetup.tsx - Adicionado limite de 6 grupos ao carregar dados pré-preenchidos
+- [x] Backend - Garantido máximo de 6 grupos em todas as operações

@@ -149,7 +149,15 @@ export const appRouter = router({
 
         const sessions = await getAssessmentRespondentSessions(input.assessmentId);
         const completedSessions = sessions.filter(s => s.isCompleted === 1);
-        const groups = await getCompanyGroups(assessment.companyId);
+        
+        // Get unique group IDs from sessions for this assessment
+        const uniqueGroupIds = Array.from(new Set(sessions.map(s => s.groupId)));
+        
+        // Get all groups for the company
+        const allGroups = await getCompanyGroups(assessment.companyId);
+        
+        // Filter to only groups used in this assessment
+        const groups = allGroups.filter(g => uniqueGroupIds.includes(g.id));
         
         let totalExpectedRespondents = 0;
         groups.forEach(g => totalExpectedRespondents += g.respondentCount);

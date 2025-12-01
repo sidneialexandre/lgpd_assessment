@@ -548,15 +548,36 @@ export async function getLastAssessmentWithGroups(companyId: number) {
 
   const assessment = assessmentResult[0];
 
-  // Get groups for this company
+  // Get groups that were used in the last assessment
+  // by finding unique groupIds from respondent sessions
+  const groupIdsResult = await db
+    .select({ groupId: respondentSessions.groupId })
+    .from(respondentSessions)
+    .where(eq(respondentSessions.assessmentId, assessment.id));
+
+  if (groupIdsResult.length === 0) {
+    return {
+      assessment,
+      groups: [],
+    };
+  }
+
+  // Get unique group IDs
+  const uniqueGroupIds = Array.from(new Set(groupIdsResult.map((r: any) => r.groupId)));
+
+  // Get the actual group data, limited to 6 groups
   const groupsResult = await db
     .select()
     .from(groups)
-    .where(eq(groups.companyId, companyId));
+    .where(eq(groups.companyId, companyId))
+    .limit(6);
+
+  // Filter to only include groups that were in the last assessment
+  const filteredGroups = groupsResult.filter(g => uniqueGroupIds.includes(g.id));
 
   return {
     assessment,
-    groups: groupsResult,
+    groups: filteredGroups,
   };
 }
 

@@ -83,7 +83,9 @@ export default function CompanySetup() {
       if (getLastAssessmentDataQuery.data) {
         const { groups: lastGroups } = getLastAssessmentDataQuery.data;
         if (lastGroups && lastGroups.length > 0) {
-          const formattedGroups = lastGroups.map(g => ({
+          // Limit to maximum 6 groups
+          const limitedGroups = lastGroups.slice(0, 6);
+          const formattedGroups = limitedGroups.map(g => ({
             groupName: g.groupName,
             departmentName: g.departmentName,
             respondentCount: g.respondentCount,
