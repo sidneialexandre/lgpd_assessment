@@ -131,3 +131,12 @@
 - [x] Função `getWithDetails` - Agora filtra grupos para apenas os usados na avaliação atual
 - [x] Frontend CompanySetup.tsx - Adicionado limite de 6 grupos ao carregar dados pré-preenchidos
 - [x] Backend - Garantido máximo de 6 grupos em todas as operações
+
+
+## Bugs Reportados - Nova Sessão
+
+- [x] Duplicação de grupos - CORRIGIDO com getByAssessment
+- [x] Painel de administração - OK (totais corretos)
+- [x] Respondentes pendentes/completados - OK (totais corretos)
+- [x] Barra de progresso - OK (reflete total correto)
+- [x] Página de definição de grupos - CORRIGIDO com barra de progresso

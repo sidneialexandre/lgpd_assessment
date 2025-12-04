@@ -22,9 +22,9 @@ export default function RespondentSelection() {
   const companyId = searchParams.get("companyId");
   const assessmentId = searchParams.get("assessmentId");
 
-  const getGroupsQuery = trpc.group.getByCompany.useQuery(
-    { companyId: parseInt(companyId || "0") },
-    { enabled: !!companyId }
+  const getGroupsQuery = trpc.group.getByAssessment.useQuery(
+    { assessmentId: parseInt(assessmentId || "0") },
+    { enabled: !!assessmentId }
   );
 
   const getSessionsQuery = trpc.respondent.getAssessmentSessions.useQuery(
@@ -181,6 +181,12 @@ export default function RespondentSelection() {
                         <p className="text-xs text-gray-500 mt-2">
                           {completedCount} de {group.respondentCount} respondentes concluídos
                         </p>
+                        <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${(completedCount / group.respondentCount) * 100}%` }}
+                          ></div>
+                        </div>
                       </div>
                     </div>
                   </button>

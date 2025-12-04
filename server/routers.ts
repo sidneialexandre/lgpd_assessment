@@ -26,8 +26,11 @@ import {
   calculateConsolidatedResults,
   getAssessmentAnswers,
   deleteAssessment,
-  getRespondentSessionsByEmail
+  getRespondentSessionsByEmail,
+  getDb
 } from "./db";
+import { groups } from "../drizzle/schema";
+import { inArray } from "drizzle-orm";
 
 export const appRouter = router({
   system: systemRouter,
@@ -106,6 +109,25 @@ export const appRouter = router({
       .input(z.object({ companyId: z.number() }))
       .query(async ({ input }) => {
         return await getCompanyGroups(input.companyId);
+      }),
+
+    getByAssessment: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .query(async ({ input }) => {
+        const sessions = await getAssessmentRespondentSessions(input.assessmentId);
+        const uniqueGroupIds = Array.from(new Set(sessions.map(s => s.groupId)));
+        
+        if (uniqueGroupIds.length === 0) return [];
+        
+        const db = await getDb();
+        if (!db) return [];
+        
+        const groupsResult = await db
+          .select()
+          .from(groups)
+          .where(inArray(groups.id, uniqueGroupIds));
+        
+        return groupsResult;
       }),
 
     delete: protectedProcedure

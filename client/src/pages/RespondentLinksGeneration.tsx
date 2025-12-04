@@ -28,9 +28,9 @@ export default function RespondentLinksGeneration() {
     }
   }, []);
 
-  const getGroupsQuery = trpc.group.getByCompany.useQuery(
-    { companyId: companyId || 0 },
-    { enabled: !!companyId }
+  const getGroupsQuery = trpc.group.getByAssessment.useQuery(
+    { assessmentId: assessmentId || 0 },
+    { enabled: !!assessmentId }
   );
 
   const getSessionsQuery = trpc.respondent.getAssessmentSessions.useQuery(
