@@ -613,3 +613,34 @@ export async function getRespondentSessionsByEmail(email: string) {
 
   return sessions;
 }
+
+
+// Create respondent sessions automatically for all respondents in all groups
+export async function createRespondentSessionsForAssessment(assessmentId: number, companyId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Get all groups for this company
+  const companyGroups = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.companyId, companyId));
+
+  // Create sessions for each respondent in each group
+  for (const group of companyGroups) {
+    for (let respondentNumber = 1; respondentNumber <= group.respondentCount; respondentNumber++) {
+      const accessToken = generateAccessToken();
+      
+      await db.insert(respondentSessions).values({
+        assessmentId,
+        groupId: group.id,
+        respondentNumber,
+        accessToken,
+        isCompleted: 0,
+        totalScore: 0,
+      });
+    }
+  }
+}

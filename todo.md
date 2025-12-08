@@ -140,3 +140,16 @@
 - [x] Respondentes pendentes/completados - OK (totais corretos)
 - [x] Barra de progresso - OK (reflete total correto)
 - [x] Página de definição de grupos - CORRIGIDO com barra de progresso
+
+
+## Bug Crítico - Grupos Não Estão Sendo Salvos
+
+- [x] Grupos G1 a G6 não estão sendo salvos ao clicar em Próximo Passo - CORRIGIDO
+- [x] Painel de administração mostra que nenhum grupo foi configurado após salvar - CORRIGIDO
+- [x] Fluxo de salvamento de grupos precisa ser investigado e corrigido - CORRIGIDO
+
+## Correção Implementada
+
+- [x] Criada função `createRespondentSessionsForAssessment` que cria automaticamente sessões para todos os respondentes
+- [x] Modificado procedimento `assessment.create` para chamar a nova função
+- [x] Agora quando uma avaliação é criada, todas as sessões de respondentes são criadas automaticamente

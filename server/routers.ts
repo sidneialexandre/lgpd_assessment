@@ -27,7 +27,8 @@ import {
   getAssessmentAnswers,
   deleteAssessment,
   getRespondentSessionsByEmail,
-  getDb
+  getDb,
+  createRespondentSessionsForAssessment
 } from "./db";
 import { groups } from "../drizzle/schema";
 import { inArray } from "drizzle-orm";
@@ -142,7 +143,10 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({ companyId: z.number() }))
       .mutation(async ({ input }) => {
-        return await createAssessment(input.companyId);
+        const assessment = await createAssessment(input.companyId);
+        // Create respondent sessions for all respondents in all groups
+        await createRespondentSessionsForAssessment(assessment.id, input.companyId);
+        return assessment;
       }),
 
     getById: protectedProcedure
