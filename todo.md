@@ -153,3 +153,18 @@
 - [x] Criada função `createRespondentSessionsForAssessment` que cria automaticamente sessões para todos os respondentes
 - [x] Modificado procedimento `assessment.create` para chamar a nova função
 - [x] Agora quando uma avaliação é criada, todas as sessões de respondentes são criadas automaticamente
+
+
+## Bug Crítico - Duplicação de Grupos Entre Avaliações (Nova Sessão)
+
+- [x] Grupos de avaliações anteriores sendo carregados - CORRIGIDO
+- [x] Sistema confundindo grupos de diferentes avaliações - CORRIGIDO
+- [x] Grupos antigos aparecendo em novas avaliações - CORRIGIDO
+- [x] Isolamento de grupos por avaliação - CORRIGIDO
+- [x] Sugestão apenas da última avaliação - CORRIGIDO
+
+## Correções Implementadas - Duplicação
+
+- [x] Modificada `getLastAssessmentWithGroups` para buscar APENAS grupos da última avaliação usando inArray
+- [x] Modificada `createGroup` para fazer upsert (criar ou atualizar se já existir)
+- [x] Agora grupos com mesmo nome são reutilizados em novas avaliações, evitando duplicação
