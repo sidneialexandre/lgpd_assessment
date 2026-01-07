@@ -1,0 +1,1 @@
+ALTER TABLE `assessments` ADD `assessmentNumber` int DEFAULT 1 NOT NULL;

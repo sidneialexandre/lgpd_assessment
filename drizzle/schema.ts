@@ -60,6 +60,7 @@ export type InsertGroup = typeof groups.$inferInsert;
 export const assessments = mysqlTable("assessments", {
   id: int("id").autoincrement().primaryKey(),
   companyId: int("companyId").notNull().references(() => companies.id),
+  assessmentNumber: int("assessmentNumber").default(1).notNull(), // 1, 2, 3, etc - unique per company
   totalScore: int("totalScore").default(0).notNull(),
   compliancePercentage: decimal("compliancePercentage", { precision: 5, scale: 2 }).default("0").notNull(),
   isCompleted: int("isCompleted").default(0).notNull(), // 0 = not completed, 1 = completed
@@ -113,3 +114,20 @@ export const answers = mysqlTable("answers", {
 export type Answer = typeof answers.$inferSelect;
 export type InsertAnswer = typeof answers.$inferInsert;
 
+
+
+// Assessment Groups table to associate groups with specific assessments
+export const assessmentGroups = mysqlTable("assessmentGroups", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentId: int("assessmentId").notNull().references(() => assessments.id, { onDelete: "cascade" }),
+  groupId: int("groupId").notNull().references(() => groups.id, { onDelete: "cascade" }),
+  groupName: varchar("groupName", { length: 100 }).notNull(), // G1, G2, etc (copy from group)
+  departmentName: varchar("departmentName", { length: 255 }).notNull(), // Department name (copy from group)
+  respondentCount: int("respondentCount").notNull(), // Number of respondents in this group for this assessment
+  respondentsCompleted: int("respondentsCompleted").default(0).notNull(), // Number who completed
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AssessmentGroup = typeof assessmentGroups.$inferSelect;
+export type InsertAssessmentGroup = typeof assessmentGroups.$inferInsert;

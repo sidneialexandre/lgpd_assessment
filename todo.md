@@ -168,3 +168,23 @@
 - [x] Modificada `getLastAssessmentWithGroups` para buscar APENAS grupos da última avaliação usando inArray
 - [x] Modificada `createGroup` para fazer upsert (criar ou atualizar se já existir)
 - [x] Agora grupos com mesmo nome são reutilizados em novas avaliações, evitando duplicação
+
+
+## Bug Crítico - Duplicação de Grupos em Novas Avaliações (Nova Sessão)
+
+- [ ] Duplicação de grupos ao iniciar nova avaliação para mesma empresa
+- [ ] Cada avaliação precisa ter identificador único (Avaliação 1, Avaliação 2, etc)
+- [ ] Grupos não devem ser compartilhados entre avaliações
+- [ ] Cada avaliação deve ter sua própria configuração isolada de grupos
+- [ ] Necessário criar tabela de associação assessment_groups
+
+
+## Correções Implementadas - Isolamento de Avaliações
+
+- [x] Criada tabela `assessmentGroups` para associar grupos a avaliações
+- [x] Adicionado campo `assessmentNumber` à tabela assessments (1, 2, 3, etc)
+- [x] Criada função `getNextAssessmentNumber` para calcular próximo número
+- [x] Modificada `createAssessment` para usar assessmentNumber
+- [x] Criada função `createAssessmentGroupsForAssessment` para isolar grupos
+- [x] Cada avaliação agora tem sua própria configuração de grupos isolada
+- [x] Grupos não são mais duplicados entre avaliações

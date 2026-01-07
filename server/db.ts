@@ -2,9 +2,9 @@ import { eq, and, sum, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, companies, groups, assessments, answers, 
-  respondentSessions, individualAnswers,
-  Assessment, Answer, Company, Group, 
-  InsertCompany, InsertGroup, RespondentSession, IndividualAnswer,
+  respondentSessions, individualAnswers, assessmentGroups,
+  Assessment, Answer, Company, Group, AssessmentGroup,
+  InsertCompany, InsertGroup, RespondentSession, IndividualAnswer, InsertAssessmentGroup,
   InsertRespondentSession, InsertIndividualAnswer
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -205,8 +205,12 @@ export async function createAssessment(companyId: number): Promise<Assessment> {
     throw new Error("Database not available");
   }
 
+  // Get the next assessment number for this company
+  const nextNumber = await getNextAssessmentNumber(companyId);
+
   const result = await db.insert(assessments).values({
     companyId,
+    assessmentNumber: nextNumber,
     totalScore: 0,
     compliancePercentage: "0",
     isCompleted: 0,
@@ -643,4 +647,59 @@ export async function createRespondentSessionsForAssessment(assessmentId: number
       });
     }
   }
+}
+
+
+export async function createAssessmentGroupsForAssessment(assessmentId: number, companyId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Get all groups for this company
+  const companyGroups = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.companyId, companyId));
+
+  // Create assessment groups for each company group
+  for (const group of companyGroups) {
+    await db.insert(assessmentGroups).values({
+      assessmentId,
+      groupId: group.id,
+      groupName: group.groupName,
+      departmentName: group.departmentName,
+      respondentCount: group.respondentCount,
+      respondentsCompleted: 0,
+    });
+  }
+}
+
+
+export async function getNextAssessmentNumber(companyId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Get the highest assessment number for this company
+  const result = await db
+    .select({ maxNumber: sum(assessments.assessmentNumber) })
+    .from(assessments)
+    .where(eq(assessments.companyId, companyId));
+
+  // This is a workaround - we need to get the max assessment number
+  // Let's use a different approach
+  const allAssessments = await db
+    .select({ assessmentNumber: assessments.assessmentNumber })
+    .from(assessments)
+    .where(eq(assessments.companyId, companyId))
+    .orderBy(desc(assessments.assessmentNumber))
+    .limit(1);
+
+  if (allAssessments.length === 0) {
+    return 1;
+  }
+
+  return allAssessments[0].assessmentNumber + 1;
 }

@@ -57,6 +57,20 @@
       "when": 1763987676338,
       "tag": "0007_brainy_captain_universe",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1767697142376,
+      "tag": "0008_robust_vermin",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1767788722407,
+      "tag": "0009_warm_ravenous",
+      "breakpoints": true
     }
   ]
 }
