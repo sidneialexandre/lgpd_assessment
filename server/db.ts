@@ -703,3 +703,94 @@ export async function getNextAssessmentNumber(companyId: number): Promise<number
 
   return allAssessments[0].assessmentNumber + 1;
 }
+
+
+// Create a group isolated to a specific assessment
+export async function createGroupForAssessment(
+  assessmentId: number,
+  companyId: number,
+  groupName: string,
+  departmentName: string,
+  respondentCount: number
+): Promise<AssessmentGroup> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // First, check if this group name already exists for this assessment
+  const existingAssessmentGroup = await db
+    .select()
+    .from(assessmentGroups)
+    .where(
+      and(
+        eq(assessmentGroups.assessmentId, assessmentId),
+        eq(assessmentGroups.groupName, groupName)
+      )
+    )
+    .limit(1);
+
+  if (existingAssessmentGroup.length > 0) {
+    throw new Error(`Group ${groupName} already exists for this assessment`);
+  }
+
+  // Create or get the group in the groups table
+  const existingGroup = await db
+    .select()
+    .from(groups)
+    .where(
+      and(
+        eq(groups.companyId, companyId),
+        eq(groups.groupName, groupName)
+      )
+    )
+    .limit(1);
+
+  let groupId: number;
+  if (existingGroup.length > 0) {
+    groupId = existingGroup[0].id;
+  } else {
+    // Create new group
+    const result = await db.insert(groups).values({
+      companyId,
+      groupName,
+      departmentName,
+      respondentCount,
+    });
+    groupId = Number(result[0].insertId);
+  }
+
+  // Now create the assessment group entry linking group to assessment
+  const result = await db.insert(assessmentGroups).values({
+    assessmentId,
+    groupId,
+    groupName,
+    departmentName,
+    respondentCount,
+    respondentsCompleted: 0,
+  });
+
+  // Create respondent sessions for this group
+  for (let respondentNumber = 1; respondentNumber <= respondentCount; respondentNumber++) {
+    const accessToken = generateAccessToken();
+    
+    await db.insert(respondentSessions).values({
+      assessmentId,
+      groupId,
+      respondentNumber,
+      accessToken,
+      isCompleted: 0,
+      totalScore: 0,
+    });
+  }
+
+  return {
+    id: Number(result[0].insertId),
+    assessmentId,
+    groupId,
+    groupName,
+    departmentName,
+    respondentCount,
+    respondentsCompleted: 0,
+  } as AssessmentGroup;
+}

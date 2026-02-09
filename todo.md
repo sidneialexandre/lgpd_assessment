@@ -188,3 +188,32 @@
 - [x] Criada função `createAssessmentGroupsForAssessment` para isolar grupos
 - [x] Cada avaliação agora tem sua própria configuração de grupos isolada
 - [x] Grupos não são mais duplicados entre avaliações
+
+
+## Correção Final - Fluxo de Criação de Grupos Isolados (Nova Sessão)
+
+- [x] Corrigido erro de sintaxe em routers.ts - createForAssessment estava fora do router
+- [x] Adicionado procedimento `group.createForAssessment` em routers.ts
+- [x] Criada função `createGroupForAssessment` em db.ts que:
+  - Cria grupos isolados para uma avaliação específica
+  - Previne duplicação de nomes de grupos dentro da mesma avaliação
+  - Cria automaticamente sessões de respondentes para cada grupo
+  - Usa a tabela assessmentGroups para manter associação
+- [x] Atualizado CompanySetup.tsx para usar novo fluxo:
+  - Criar empresa primeiro
+  - Criar avaliação (recebe assessmentId)
+  - Criar grupos isolados para essa avaliação usando createForAssessment
+- [x] Criados testes vitest para validar lógica de isolamento de grupos
+- [x] Todos os 8 testes passaram com sucesso
+
+## Fluxo Correto Agora Implementado
+
+1. Usuário preenche dados da empresa (CNPJ, Razão Social)
+2. Usuário adiciona grupos G1-G6 com departamentos e quantidade de respondentes
+3. Clica em "Próximo Passo":
+   - Cria/obtém a empresa
+   - Cria uma nova avaliação (com assessmentNumber único)
+   - Cria cada grupo isolado para essa avaliação
+   - Cria automaticamente sessões de respondentes para cada grupo
+4. Redireciona para seleção de respondentes
+5. Cada avaliação tem sua própria configuração de grupos (sem duplicação)
