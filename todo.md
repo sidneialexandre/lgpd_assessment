@@ -217,3 +217,44 @@
    - Cria automaticamente sessões de respondentes para cada grupo
 4. Redireciona para seleção de respondentes
 5. Cada avaliação tem sua própria configuração de grupos (sem duplicação)
+
+
+## Problemas Críticos Reportados - Nova Sessão
+
+- [ ] Respondente tem acesso a TODAS as avaliações dos grupos, não apenas seu link gerado
+- [ ] Duplicação de grupos ao clicar em "Processar" na definição de grupos (novamente)
+- [ ] Falta mecanismo para deletar empresa com todas suas avaliações
+- [ ] Cada grupo em cada avaliação precisa de um ID único para evitar duplicação
+
+
+## Problemas Críticos Corrigidos - Sessão 2
+
+- [x] Respondente tem acesso a TODAS as avaliações dos grupos - CORRIGIDO
+  - Removido acesso de respondentes autenticados ao RespondentDashboard
+  - Respondentes agora DEVEM acessar apenas via link com token único
+  - Home.tsx redireciona respondentes autenticados com mensagem de acesso restrito
+
+- [x] Duplicação de grupos ao clicar em "Processar" - CORRIGIDO
+  - Fluxo corrigido: Empresa → Avaliação → Grupos isolados
+  - Procedimento group.createForAssessment cria grupos isolados por avaliação
+  - Cada avaliação tem sua própria configuração de grupos (G1-G6)
+
+- [x] Falta mecanismo para deletar empresa - IMPLEMENTADO
+  - Criada função deleteCompany em db.ts que deleta em cascata
+  - Adicionado procedimento company.delete em routers.ts
+  - Botão de deletar empresa adicionado em MyAssessments.tsx
+  - Confirmação obrigatória antes de deletar
+
+- [x] Cada grupo precisa de ID único por avaliação - IMPLEMENTADO
+  - Tabela assessmentGroups associa grupos a avaliações
+  - Campo assessmentNumber identifica cada avaliação
+  - Cada avaliação tem configuração isolada de grupos
+
+## Testes Implementados - Sessão 2
+
+- [x] 9 testes vitest criados em critical-fixes.test.ts
+- [x] Todos os testes passando
+- [x] Validação de acesso de respondentes apenas via token
+- [x] Validação de cascata de deleção de empresa
+- [x] Validação de isolamento de grupos por avaliação
+- [x] Validação de fluxo correto de criação

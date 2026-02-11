@@ -33,7 +33,7 @@ export default function CompanySetup() {
   const [hasLoadedGroups, setHasLoadedGroups] = useState(false);
 
   const createCompanyMutation = trpc.company.createOrGet.useMutation();
-  const createGroupMutation = trpc.group.create.useMutation();
+  const createGroupForAssessmentMutation = trpc.group.createForAssessment.useMutation();
   const createAssessmentMutation = trpc.assessment.create.useMutation();
   const getCompanyQuery = trpc.company.getById.useQuery(
     { companyId: companyId || 0 },
@@ -196,26 +196,27 @@ export default function CompanySetup() {
     setError("");
 
     try {
-      // Create or get company
+      // Step 1: Create or get company
       const company = await createCompanyMutation.mutateAsync({
         cnpj: cnpj.replace(/\D/g, ""),
         razaoSocial,
       });
 
-      // Create groups
+      // Step 2: Create assessment FIRST (this is crucial for isolation)
+      const assessment = await createAssessmentMutation.mutateAsync({
+        companyId: company.id,
+      });
+
+      // Step 3: Create groups ISOLATED to this assessment
       for (const group of groups) {
-        await createGroupMutation.mutateAsync({
+        await createGroupForAssessmentMutation.mutateAsync({
+          assessmentId: assessment.id,
           companyId: company.id,
           groupName: group.groupName,
           departmentName: group.departmentName,
           respondentCount: group.respondentCount,
         });
       }
-
-      // Create assessment
-      const assessment = await createAssessmentMutation.mutateAsync({
-        companyId: company.id,
-      });
 
       // Redirect to respondent selection page
       setLocation(`/respondent-selection?companyId=${company.id}&assessmentId=${assessment.id}`);

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, Trash2 } from "lucide-react";
 
 export default function MyAssessments() {
   const [location, setLocation] = useLocation();
@@ -34,6 +34,24 @@ export default function MyAssessments() {
 
   const handleBackToHome = () => {
     setLocation("/");
+  };
+
+  const deleteCompanyMutation = trpc.company.delete.useMutation();
+
+  const handleDeleteCompany = async (e: React.MouseEvent, companyId: number) => {
+    e.stopPropagation();
+    
+    if (!window.confirm("Tem certeza que deseja deletar esta empresa e TODAS as suas avaliações? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      await deleteCompanyMutation.mutateAsync({ companyId });
+      setCompanies(companies.filter(c => c.id !== companyId));
+    } catch (error) {
+      console.error("Erro ao deletar empresa:", error);
+      alert("Erro ao deletar empresa. Por favor, tente novamente.");
+    }
   };
 
   if (!isAuthenticated) {
@@ -130,16 +148,27 @@ export default function MyAssessments() {
                     <span className="text-sm text-slate-600">
                       Criada em {new Date(company.createdAt).toLocaleDateString("pt-BR")}
                     </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewAssessment(company.id);
-                      }}
-                    >
-                      Gerenciar
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewAssessment(company.id);
+                        }}
+                      >
+                        Gerenciar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleDeleteCompany(e, company.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={deleteCompanyMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

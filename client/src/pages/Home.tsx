@@ -18,6 +18,28 @@ export default function Home() {
   };
 
   const isAdmin = user?.role === "admin";
+  const isRespondent = user?.role === "respondent";
+
+  // Redirect respondents away from home page
+  if (isRespondent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Acesso Restrito</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">
+              Respondentes devem acessar a avaliação através do link único fornecido.
+            </p>
+            <Button onClick={() => logout()} className="w-full">
+              Sair
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -89,11 +111,12 @@ export default function Home() {
             ) : isAuthenticated ? (
               <>
                 <Button
-                  onClick={() => (window.location.href = "/respondent-dashboard")}
+                  onClick={() => (window.location.href = "/")}
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 text-lg"
+                  className="bg-gray-400 text-white px-8 py-6 text-lg cursor-not-allowed"
+                  disabled
                 >
-                  Minhas Avaliacoes
+                  Respondentes acessam via link
                 </Button>
               </>
             ) : (

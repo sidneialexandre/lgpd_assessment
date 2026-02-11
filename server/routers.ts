@@ -26,10 +26,12 @@ import {
   calculateConsolidatedResults,
   getAssessmentAnswers,
   deleteAssessment,
+  deleteCompany,
   getRespondentSessionsByEmail,
   getDb,
   createRespondentSessionsForAssessment,
-  createAssessmentGroupsForAssessment
+  createAssessmentGroupsForAssessment,
+  createGroupForAssessment
 } from "./db";
 import { groups } from "../drizzle/schema";
 import { inArray } from "drizzle-orm";
@@ -88,9 +90,16 @@ export const appRouter = router({
         return await getCompanyById(input.companyId);
       }),
 
-    list: protectedProcedure.query(async ({ ctx }) => {
+     list: protectedProcedure.query(async ({ ctx }) => {
       return await getUserCompanies(ctx.user.id);
     }),
+
+    delete: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteCompany(input.companyId);
+        return { success: true };
+      }),
   }),
 
   group: router({
@@ -130,6 +139,26 @@ export const appRouter = router({
           .where(inArray(groups.id, uniqueGroupIds));
         
         return groupsResult;
+      }),
+
+    createForAssessment: protectedProcedure
+      .input(
+        z.object({
+          assessmentId: z.number(),
+          companyId: z.number(),
+          groupName: z.string().min(1),
+          departmentName: z.string().min(1),
+          respondentCount: z.number().min(1),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await createGroupForAssessment(
+          input.assessmentId,
+          input.companyId,
+          input.groupName,
+          input.departmentName,
+          input.respondentCount
+        );
       }),
 
     delete: protectedProcedure

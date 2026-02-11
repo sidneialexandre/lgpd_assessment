@@ -794,3 +794,33 @@ export async function createGroupForAssessment(
     respondentsCompleted: 0,
   } as AssessmentGroup;
 }
+
+
+// Delete company and all its assessments, groups, and related data
+export async function deleteCompany(companyId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Get all assessments for this company
+  const companyAssessments = await db
+    .select()
+    .from(assessments)
+    .where(eq(assessments.companyId, companyId));
+
+  // Delete all data related to each assessment
+  for (const assessment of companyAssessments) {
+    await deleteAssessment(assessment.id);
+  }
+
+  // Delete all groups for this company
+  await db
+    .delete(groups)
+    .where(eq(groups.companyId, companyId));
+
+  // Delete the company itself
+  await db
+    .delete(companies)
+    .where(eq(companies.id, companyId));
+}
