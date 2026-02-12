@@ -202,21 +202,11 @@ export default function CompanySetup() {
         razaoSocial,
       });
 
-      // Step 2: Create assessment FIRST (this is crucial for isolation)
+      // Step 2: Create assessment with groups (this is crucial for isolation)
       const assessment = await createAssessmentMutation.mutateAsync({
         companyId: company.id,
+        groups: groups,
       });
-
-      // Step 3: Create groups ISOLATED to this assessment
-      for (const group of groups) {
-        await createGroupForAssessmentMutation.mutateAsync({
-          assessmentId: assessment.id,
-          companyId: company.id,
-          groupName: group.groupName,
-          departmentName: group.departmentName,
-          respondentCount: group.respondentCount,
-        });
-      }
 
       // Redirect to respondent selection page
       setLocation(`/respondent-selection?companyId=${company.id}&assessmentId=${assessment.id}`);

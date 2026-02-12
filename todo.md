@@ -258,3 +258,21 @@
 - [x] Validação de cascata de deleção de empresa
 - [x] Validação de isolamento de grupos por avaliação
 - [x] Validação de fluxo correto de criação
+
+
+## Erro ao Clicar em "Processar" - Nova Sessão
+
+- [ ] Erro ao clicar no botão "Processar" no painel de configuração de grupos
+- [ ] Investigar qual é o erro exato (verificar console do navegador)
+- [ ] Corrigir fluxo de criação de grupos
+
+
+## Erro ao Clicar em "Próximo Passo" - Corrigido
+
+- [x] Erro ao clicar no botão "Próximo Passo" no painel de configuração de grupos - CORRIGIDO
+  - Problema: assessment.create estava criando grupos automaticamente, mas CompanySetup tentava criar manualmente depois
+  - Solução: Modificado assessment.create para aceitar grupos como parâmetro
+  - Fluxo corrigido: Empresa → Avaliação com grupos (tudo em um passo)
+  - CompanySetup agora passa grupos ao criar avaliação
+  - Removida criação manual de grupos no frontend
+  - 8 testes vitest criados e passando para validar novo fluxo

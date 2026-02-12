@@ -171,12 +171,29 @@ export const appRouter = router({
 
   assessment: router({
     create: protectedProcedure
-      .input(z.object({ companyId: z.number() }))
+      .input(z.object({ 
+        companyId: z.number(),
+        groups: z.array(z.object({
+          groupName: z.string(),
+          departmentName: z.string(),
+          respondentCount: z.number(),
+        })).optional()
+      }))
       .mutation(async ({ input }) => {
         const assessment = await createAssessment(input.companyId);
-        // Create assessment groups to isolate groups per assessment
-        await createAssessmentGroupsForAssessment(assessment.id, input.companyId);
-        // Create respondent sessions for all respondents in all groups
+        if (input.groups && input.groups.length > 0) {
+          for (const group of input.groups) {
+            await createGroupForAssessment(
+              assessment.id,
+              input.companyId,
+              group.groupName,
+              group.departmentName,
+              group.respondentCount
+            );
+          }
+        } else {
+          await createAssessmentGroupsForAssessment(assessment.id, input.companyId);
+        }
         await createRespondentSessionsForAssessment(assessment.id, input.companyId);
         return assessment;
       }),
