@@ -11,18 +11,21 @@ export const getLoginUrl = (pendingToken?: string) => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
-  const state = btoa(redirectUri);
+  
+  // Create state object with redirect URI and optional pending token
+  const stateData = {
+    redirectUri,
+    pendingToken: pendingToken || null,
+  };
+  
+  // Encode state as base64 JSON
+  const state = btoa(JSON.stringify(stateData));
 
   const url = new URL(`${oauthPortalUrl}/app-auth`);
   url.searchParams.set("appId", appId);
   url.searchParams.set("redirectUri", redirectUri);
   url.searchParams.set("state", state);
   url.searchParams.set("type", "signIn");
-  
-  // Add pending token if provided
-  if (pendingToken) {
-    url.searchParams.set("pendingToken", pendingToken);
-  }
 
   return url.toString();
 };

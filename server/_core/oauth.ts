@@ -44,8 +44,16 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      // Check if there's a pending assessment token in the state parameter
-      const pendingToken = getQueryParam(req, "pendingToken");
+      // Decode state to extract pending token
+      let pendingToken: string | null = null;
+      try {
+        const stateData = JSON.parse(Buffer.from(state, 'base64').toString('utf-8'));
+        pendingToken = stateData.pendingToken || null;
+      } catch (e) {
+        // If state is not in the new format, just use the old behavior
+        console.warn("[OAuth] Failed to decode state as JSON, using default redirect");
+      }
+
       if (pendingToken) {
         // Redirect to assessment with the token
         res.redirect(302, `/assessment?token=${encodeURIComponent(pendingToken)}`);

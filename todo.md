@@ -323,3 +323,49 @@
 4. Usuário faz login
 5. OAuth callback redireciona para `/assessment?token=XXX`
 6. Avaliação abre direto para respondente responder
+
+
+## Bug: Token Pendente Não Está Sendo Passado ao OAuth
+
+- [ ] Investigar por que pendingToken não é recebido no callback OAuth
+- [ ] Verificar se getLoginUrl está incluindo pendingToken corretamente
+- [ ] Verificar se oauth.ts está recebendo pendingToken nos query params
+- [ ] Corrigir fluxo de passagem do token através do OAuth
+- [ ] Testar redirecionamento para avaliação após login
+
+
+## Bug: Token Pendente Não Está Sendo Passado ao OAuth - CORRIGIDO
+
+- [x] Investigar por que pendingToken não é recebido no callback OAuth
+- [x] Verificar se getLoginUrl está incluindo pendingToken corretamente
+- [x] Verificar se oauth.ts está recebendo pendingToken nos query params
+- [x] Corrigir fluxo de passagem do token através do OAuth
+- [x] Testar redirecionamento para avaliação após login
+
+### Solução Implementada:
+
+1. **const.ts** - Modificado getLoginUrl:
+   - Agora codifica pendingToken no parâmetro `state` como JSON base64
+   - State contém: `{ redirectUri, pendingToken }`
+   - Permite passar token através do OAuth portal
+
+2. **oauth.ts** - Modificado callback OAuth:
+   - Decodifica state para extrair pendingToken
+   - Mantém backward compatibility com state antigo (apenas redirectUri)
+   - Se pendingToken encontrado: redireciona para `/assessment?token=XXX`
+   - Se não: redireciona para `/` (home)
+
+3. **Testes**: 8 testes vitest criados em pending-token-flow.test.ts
+   - Validação de codificação/decodificação de state
+   - Validação de backward compatibility
+   - Validação de fluxo completo: Link → Login → Assessment
+   - Todos os testes passando
+
+### Novo Fluxo Correto:
+1. Respondente acessa `/respondent?token=XXX`
+2. RespondentAccess verifica autenticação
+3. Se não autenticado → Chama getLoginUrl(token) que codifica token no state
+4. Usuário faz login no OAuth portal
+5. OAuth callback decodifica state e extrai token
+6. OAuth callback redireciona para `/assessment?token=XXX`
+7. Avaliação abre direto para respondente responder
