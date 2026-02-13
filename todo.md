@@ -276,3 +276,50 @@
   - CompanySetup agora passa grupos ao criar avaliação
   - Removida criação manual de grupos no frontend
   - 8 testes vitest criados e passando para validar novo fluxo
+
+
+## Bugs de Fluxo de Autenticação de Respondentes
+
+- [ ] Bug 1: Respondente acessa link, abre avaliação, depois fecha e solicita login
+  - Esperado: Login PRIMEIRO, depois abrir avaliação
+  - Atual: Avaliação abre, depois fecha e pede login
+  
+- [ ] Bug 2: Após login, respondente vê tela inicial informando "acesse o link"
+  - Esperado: Após login, abrir direto a avaliação
+  - Atual: Mostra tela inicial
+  
+- [ ] Bug 3: Fluxo correto deve ser: Link → Login → Avaliação
+  - Atual: Link → Avaliação → Login → Tela Inicial
+
+
+## Fluxo de Autenticação de Respondentes - Corrigido
+
+- [x] Bug 1: Respondente acessa link, abre avaliação, depois fecha e solicita login - CORRIGIDO
+- [x] Bug 2: Após login, respondente vê tela inicial informando "acesse o link" - CORRIGIDO
+- [x] Bug 3: Fluxo correto deve ser: Link → Login → Avaliação - IMPLEMENTADO
+
+### Mudanças Implementadas:
+
+1. **RespondentAccess.tsx**: Agora verifica autenticação ANTES de abrir avaliação
+   - Se não autenticado: redireciona para login com token como parâmetro
+   - Se autenticado: redireciona direto para assessment com token
+
+2. **const.ts**: Modificado getLoginUrl para aceitar parâmetro pendingToken
+   - Login URL agora inclui pendingToken quando fornecido
+
+3. **oauth.ts**: Modificado callback OAuth para redirecionar para assessment
+   - Se pendingToken recebido: redireciona para `/assessment?token=XXX`
+   - Se não: redireciona para `/` (home)
+
+4. **Testes**: 9 testes vitest criados e passando
+   - Validação de fluxo completo
+   - Validação de redirecionamentos corretos
+   - Validação de eliminação do loop antigo
+
+### Novo Fluxo:
+1. Respondente acessa link `/respondent?token=XXX`
+2. RespondentAccess verifica autenticação
+3. Se não autenticado → Redireciona para login com token
+4. Usuário faz login
+5. OAuth callback redireciona para `/assessment?token=XXX`
+6. Avaliação abre direto para respondente responder
