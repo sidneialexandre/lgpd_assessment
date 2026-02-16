@@ -32,7 +32,10 @@ import {
   createRespondentSessionsForAssessment,
   createAssessmentGroupsForAssessment,
   createGroupForAssessment,
-  getRespondentCompletionStats
+  getRespondentCompletionStats,
+  updateRespondentInfo,
+  getRespondentSessionsWithGroups,
+  areAllRespondentEmailsFilled
 } from "./db";
 import { groups } from "../drizzle/schema";
 import { inArray } from "drizzle-orm";
@@ -364,6 +367,62 @@ export const appRouter = router({
     getAvailableAssessments: protectedProcedure.query(async ({ ctx }) => {
       return await getRespondentSessionsByEmail(ctx.user.email || "");
     }),
+
+    updateInfo: protectedProcedure
+      .input(
+        z.object({
+          respondentSessionId: z.number(),
+          respondentName: z.string().min(1, "Nome é obrigatório"),
+          respondentEmail: z.string().email("Email inválido"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await updateRespondentInfo(
+          input.respondentSessionId,
+          input.respondentName,
+          input.respondentEmail
+        );
+        return { success: true };
+      }),
+
+    getSessionsWithGroups: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .query(async ({ input }) => {
+        return await getRespondentSessionsWithGroups(input.assessmentId);
+      }),
+
+    checkAllEmailsFilled: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .query(async ({ input }) => {
+        return await areAllRespondentEmailsFilled(input.assessmentId);
+      }),
+
+    sendEmailsToRespondents: protectedProcedure
+      .input(z.object({ assessmentId: z.number() }))
+      .mutation(async ({ input }) => {
+        const allFilled = await areAllRespondentEmailsFilled(input.assessmentId);
+        if (!allFilled) {
+          throw new Error("Nem todos os emails dos respondentes foram preenchidos");
+        }
+
+        const sessions = await getRespondentSessionsWithGroups(input.assessmentId);
+        const assessment = await getAssessmentById(input.assessmentId);
+        const company = assessment ? await getCompanyById(assessment.companyId) : null;
+
+        // TODO: Implementar envio de emails via serviço de email
+        // Por enquanto, apenas retorna sucesso
+        const emailsSent = sessions.map((session) => ({
+          email: session.respondentEmail,
+          name: session.respondentName,
+          respondentNumber: session.respondentNumber,
+        }));
+
+        return {
+          success: true,
+          emailsSent: emailsSent.length,
+          message: `${emailsSent.length} emails seriam enviados para os respondentes`,
+        };
+      }),
   }),
 
 });

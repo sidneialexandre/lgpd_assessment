@@ -77,6 +77,8 @@ export const respondentSessions = mysqlTable("respondentSessions", {
   assessmentId: int("assessmentId").notNull().references(() => assessments.id, { onDelete: "cascade" }),
   groupId: int("groupId").notNull().references(() => groups.id, { onDelete: "cascade" }),
   respondentNumber: int("respondentNumber").notNull(), // Which respondent in the group (1, 2, 3, etc)
+  respondentName: varchar("respondentName", { length: 255 }), // Name of the respondent
+  respondentEmail: varchar("respondentEmail", { length: 320 }), // Email of the respondent
   accessToken: varchar("accessToken", { length: 255 }), // Unique token for respondent access
   isCompleted: int("isCompleted").default(0).notNull(), // 0 = not completed, 1 = completed
   totalScore: int("totalScore").default(0).notNull(),

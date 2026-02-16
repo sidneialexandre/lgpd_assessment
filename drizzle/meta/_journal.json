@@ -71,6 +71,13 @@
       "when": 1767788722407,
       "tag": "0009_warm_ravenous",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1771252197303,
+      "tag": "0010_wealthy_makkari",
+      "breakpoints": true
     }
   ]
 }

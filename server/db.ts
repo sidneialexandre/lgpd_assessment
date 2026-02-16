@@ -859,3 +859,75 @@ export async function getRespondentCompletionStats(assessmentId: number): Promis
 
   return { totalExpected, completed, remaining };
 }
+
+
+// Update respondent name and email
+export async function updateRespondentInfo(
+  respondentSessionId: number,
+  respondentName: string,
+  respondentEmail: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .update(respondentSessions)
+    .set({
+      respondentName,
+      respondentEmail,
+      updatedAt: new Date(),
+    })
+    .where(eq(respondentSessions.id, respondentSessionId));
+}
+
+// Get all respondent sessions with group information for an assessment
+export async function getRespondentSessionsWithGroups(assessmentId: number): Promise<
+  Array<{
+    id: number;
+    respondentNumber: number;
+    respondentName: string | null;
+    respondentEmail: string | null;
+    isCompleted: number;
+    totalScore: number;
+    groupName: string;
+    departmentName: string;
+    accessToken: string | null;
+  }>
+> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const sessions = await db
+    .select({
+      id: respondentSessions.id,
+      respondentNumber: respondentSessions.respondentNumber,
+      respondentName: respondentSessions.respondentName,
+      respondentEmail: respondentSessions.respondentEmail,
+      isCompleted: respondentSessions.isCompleted,
+      totalScore: respondentSessions.totalScore,
+      groupName: groups.groupName,
+      departmentName: groups.departmentName,
+      accessToken: respondentSessions.accessToken,
+    })
+    .from(respondentSessions)
+    .innerJoin(groups, eq(respondentSessions.groupId, groups.id))
+    .where(eq(respondentSessions.assessmentId, assessmentId))
+    .orderBy(respondentSessions.groupId, respondentSessions.respondentNumber);
+
+  return sessions;
+}
+
+// Check if all respondent emails are filled for an assessment
+export async function areAllRespondentEmailsFilled(assessmentId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  const sessions = await db
+    .select({ respondentEmail: respondentSessions.respondentEmail })
+    .from(respondentSessions)
+    .where(eq(respondentSessions.assessmentId, assessmentId));
+
+  return sessions.length > 0 && sessions.every((s) => s.respondentEmail && s.respondentEmail.trim().length > 0);
+}

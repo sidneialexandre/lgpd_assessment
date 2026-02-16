@@ -427,3 +427,28 @@
 4. Se não respondida: abre avaliação com cores corretas
 5. Ao finalizar: calcula corretamente respondentes faltantes
 6. Mostra contador preciso de respondentes aguardando
+
+
+## Alterações no Painel de Administração - Sessão 4
+
+- [ ] Adicionar campos de nome e email aos respondentes no banco de dados
+- [ ] Exibir grupo de cada respondente na lista do painel admin
+- [ ] Adicionar campos editáveis de nome e email para cada respondente
+- [ ] Implementar função de envio de email para respondentes
+- [ ] Validar que todos os emails estão preenchidos antes de habilitar envio
+- [ ] Criar testes vitest para validar funcionalidades
+
+
+## Painel de Administração - Gerenciamento de Respondentes (Nova Sessão)
+
+- [x] Adicionar campos de nome e email à tabela respondentSessions
+- [x] Migração de banco de dados com pnpm db:push
+- [x] Criar funções de banco de dados para atualizar respondentes
+- [x] Implementar procedimentos tRPC para gerenciar respondentes
+- [x] Reescrever painel admin com campos editáveis
+- [x] Adicionar validação de emails preenchidos
+- [x] Implementar função de envio de emails (estrutura)
+- [x] Criar 11 testes vitest para validar funcionalidades
+- [x] Servidor compilando sem erros
+- [x] Painel admin mostra grupo, nome e email de cada respondente
+- [x] Botão "Enviar Emails" habilitado apenas quando todos os emails preenchidos

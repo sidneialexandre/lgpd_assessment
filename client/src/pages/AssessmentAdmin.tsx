@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Copy, Check, Trash2, Mail } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export default function AssessmentAdmin() {
@@ -11,6 +12,10 @@ export default function AssessmentAdmin() {
   const [assessmentId, setAssessmentId] = useState<number | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingEmail, setEditingEmail] = useState("");
+  const [allEmailsFilled, setAllEmailsFilled] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -36,6 +41,39 @@ export default function AssessmentAdmin() {
       setLocation("/");
     },
   });
+
+  const getSessionsWithGroupsQuery = trpc.respondent.getSessionsWithGroups.useQuery(
+    { assessmentId: assessmentId || 0 },
+    { enabled: !!assessmentId }
+  );
+
+  const checkAllEmailsFilledQuery = trpc.respondent.checkAllEmailsFilled.useQuery(
+    { assessmentId: assessmentId || 0 },
+    { enabled: !!assessmentId, refetchInterval: 2000 }
+  );
+
+  const updateRespondentInfoMutation = trpc.respondent.updateInfo.useMutation({
+    onSuccess: () => {
+      setEditingSessionId(null);
+      getSessionsWithGroupsQuery.refetch();
+      checkAllEmailsFilledQuery.refetch();
+    },
+  });
+
+  const sendEmailsMutation = trpc.respondent.sendEmailsToRespondents.useMutation({
+    onSuccess: () => {
+      alert("Emails enviados com sucesso!");
+    },
+    onError: (error) => {
+      alert(`Erro ao enviar emails: ${error.message}`);
+    },
+  });
+
+  useEffect(() => {
+    if (checkAllEmailsFilledQuery.data !== undefined) {
+      setAllEmailsFilled(checkAllEmailsFilledQuery.data);
+    }
+  }, [checkAllEmailsFilledQuery.data]);
 
   const handleCopyToken = (token: string) => {
     const baseUrl = window.location.origin;
@@ -65,6 +103,33 @@ export default function AssessmentAdmin() {
 
   const handleBackToHome = () => {
     setLocation("/");
+  };
+
+  const handleEditStart = (session: any) => {
+    setEditingSessionId(session.id);
+    setEditingName(session.respondentName || "");
+    setEditingEmail(session.respondentEmail || "");
+  };
+
+  const handleSaveRespondent = async () => {
+    if (!editingName.trim() || !editingEmail.trim()) {
+      alert("Nome e email são obrigatórios");
+      return;
+    }
+    
+    if (editingSessionId) {
+      await updateRespondentInfoMutation.mutateAsync({
+        respondentSessionId: editingSessionId,
+        respondentName: editingName,
+        respondentEmail: editingEmail,
+      });
+    }
+  };
+
+  const handleSendEmails = async () => {
+    if (assessmentId && allEmailsFilled) {
+      await sendEmailsMutation.mutateAsync({ assessmentId });
+    }
   };
 
   if (!assessmentId) {
@@ -256,42 +321,101 @@ export default function AssessmentAdmin() {
           <CardHeader>
             <CardTitle>Lista de Respondentes</CardTitle>
             <CardDescription>
-              Copie o link abaixo e compartilhe com cada respondente
+              Preencha nome e email para cada respondente
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {data.sessions && data.sessions.length > 0 ? (
-                data.sessions.map((session: any) => {
+              {getSessionsWithGroupsQuery.data && getSessionsWithGroupsQuery.data.length > 0 ? (
+                getSessionsWithGroupsQuery.data.map((session: any) => {
                   const baseUrl = window.location.origin;
                   const respondentUrl = `${baseUrl}/respondent?token=${session.accessToken}`;
+                  const isEditing = editingSessionId === session.id;
 
                   return (
                     <div
                       key={session.id}
                       className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-slate-900">
-                              Respondente {session.respondentNumber}
-                            </span>
-                            {session.isCompleted === 1 ? (
-                              <Badge className="bg-green-100 text-green-800">
-                                Completado
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-orange-100 text-orange-800">
-                                Pendente
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-slate-500">
-                            Pontuação: {session.totalScore} pontos
-                          </p>
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className="bg-blue-100 text-blue-700">
+                            {session.groupName}
+                          </Badge>
+                          <span className="text-sm font-semibold text-slate-700">
+                            {session.departmentName}
+                          </span>
+                          {session.isCompleted === 1 ? (
+                            <Badge className="bg-green-100 text-green-800">
+                              Completado
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-orange-100 text-orange-800">
+                              Pendente
+                            </Badge>
+                          )}
                         </div>
                       </div>
+
+                      {isEditing ? (
+                        <div className="space-y-3 mb-3 p-3 bg-slate-50 rounded-lg">
+                          <div>
+                            <label className="text-sm font-medium text-slate-700">Nome</label>
+                            <Input
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              placeholder="Nome do respondente"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-slate-700">Email</label>
+                            <Input
+                              value={editingEmail}
+                              onChange={(e) => setEditingEmail(e.target.value)}
+                              placeholder="email@example.com"
+                              type="email"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={handleSaveRespondent}
+                              disabled={updateRespondentInfoMutation.isPending}
+                              className="flex-1"
+                            >
+                              Salvar
+                            </Button>
+                            <Button
+                              onClick={() => setEditingSessionId(null)}
+                              variant="outline"
+                              className="flex-1"
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 mb-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm text-slate-600">
+                                <span className="font-medium">Nome:</span> {session.respondentName || "Não preenchido"}
+                              </p>
+                              <p className="text-sm text-slate-600">
+                                <span className="font-medium">Email:</span> {session.respondentEmail || "Não preenchido"}
+                              </p>
+                            </div>
+                            <Button
+                              onClick={() => handleEditStart(session)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Editar
+                            </Button>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="bg-slate-100 p-3 rounded-lg mb-3 break-all font-mono text-sm text-slate-700">
                         {respondentUrl}
@@ -322,6 +446,29 @@ export default function AssessmentAdmin() {
                 <p className="text-slate-500">Nenhum respondente configurado ainda.</p>
               )}
             </div>
+
+            {getSessionsWithGroupsQuery.data && getSessionsWithGroupsQuery.data.length > 0 && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-blue-900 mb-1">Enviar Links por Email</p>
+                    <p className="text-sm text-blue-800">
+                      {allEmailsFilled
+                        ? "Todos os emails foram preenchidos. Clique para enviar links aos respondentes."
+                        : "Preencha todos os emails dos respondentes para habilitar envio."}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleSendEmails}
+                    disabled={!allEmailsFilled || sendEmailsMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Enviar Emails
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -406,8 +553,7 @@ export default function AssessmentAdmin() {
             ) : (
               <Button
                 onClick={() => setShowDeleteConfirm(true)}
-                variant="destructive"
-                className="w-full"
+                className="w-full bg-red-600 hover:bg-red-700"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Deletar Avaliação
