@@ -824,3 +824,38 @@ export async function deleteCompany(companyId: number): Promise<void> {
     .delete(companies)
     .where(eq(companies.id, companyId));
 }
+
+
+// Get respondent completion stats for an assessment
+export async function getRespondentCompletionStats(assessmentId: number): Promise<{
+  totalExpected: number;
+  completed: number;
+  remaining: number;
+}> {
+  const db = await getDb();
+  if (!db) {
+    return { totalExpected: 0, completed: 0, remaining: 0 };
+  }
+
+  const assessment = await getAssessmentById(assessmentId);
+  if (!assessment) {
+    return { totalExpected: 0, completed: 0, remaining: 0 };
+  }
+
+  // Get all groups for this assessment
+  const groups = await getCompanyGroups(assessment.companyId);
+  
+  // Get all respondent sessions for this assessment
+  const sessions = await getAssessmentRespondentSessions(assessmentId);
+  
+  // Count total expected respondents
+  const totalExpected = groups.reduce((sum, g) => sum + g.respondentCount, 0);
+  
+  // Count completed respondents
+  const completed = sessions.filter((s) => s.isCompleted === 1).length;
+  
+  // Calculate remaining
+  const remaining = Math.max(0, totalExpected - completed);
+
+  return { totalExpected, completed, remaining };
+}

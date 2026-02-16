@@ -11,6 +11,34 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
+// Function to get colors based on pillar name
+function getPillarColors(pillarName: string) {
+  if (pillarName.includes("Segurança")) {
+    return {
+      gradient: "from-blue-500 to-blue-600",
+      badge: "bg-blue-100 text-blue-700",
+      label: "text-blue-600",
+    };
+  } else if (pillarName.includes("Conformidade")) {
+    return {
+      gradient: "from-green-500 to-green-600",
+      badge: "bg-green-100 text-green-700",
+      label: "text-green-600",
+    };
+  } else if (pillarName.includes("Cultura")) {
+    return {
+      gradient: "from-purple-500 to-purple-600",
+      badge: "bg-purple-100 text-purple-700",
+      label: "text-purple-600",
+    };
+  }
+  return {
+    gradient: "from-blue-500 to-indigo-600",
+    badge: "bg-blue-100 text-blue-700",
+    label: "text-blue-600",
+  };
+}
+
 export default function Assessment() {
   const [, setLocation] = useLocation();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -192,6 +220,41 @@ export default function Assessment() {
   const isLoadingSession = token ? getSessionByTokenQuery.isLoading : getSessionQuery.isLoading;
   const isLoadingCompanyId = token ? getCompanyIdByTokenQuery.isLoading : false;
 
+  // Check if session is already completed
+  const isSessionCompleted = currentSessionData?.isCompleted === 1;
+  
+  // Show error if session is already completed
+  if (isSessionCompleted && token) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 py-8 px-4 flex items-center justify-center">
+        <Card className="w-full max-w-md border-red-200 bg-red-50">
+          <CardHeader className="bg-gradient-to-r from-red-500 to-orange-600 text-white">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              Avaliação Já Respondida
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <p className="text-red-800">
+                Este link de avaliação já foi utilizado e não pode ser respondido novamente.
+              </p>
+              <p className="text-sm text-red-700">
+                Se você acredita que isso é um erro, entre em contato com o administrador da avaliação.
+              </p>
+              <Button
+                onClick={() => setLocation("/")}
+                className="w-full bg-red-600 hover:bg-red-700"
+              >
+                Voltar ao Início
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (getCompanyQuery.isLoading || getGroupsQuery.isLoading || isLoadingSession || isLoadingCompanyId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -310,12 +373,17 @@ export default function Assessment() {
           {/* Question Card */}
           <TabsContent value={currentQuestion.pillar} className="space-y-6">
             <Card className="bg-white shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                <CardTitle className="text-xl">{currentQuestion.pillarName}</CardTitle>
-                <CardDescription className="text-blue-100">
-                  Questão {currentQuestionIndex + 1} de {QUESTIONS.length}
-                </CardDescription>
-              </CardHeader>
+              {(() => {
+                const colors = getPillarColors(currentQuestion.pillarName);
+                return (
+                  <CardHeader className={`bg-gradient-to-r ${colors.gradient} text-white`}>
+                    <CardTitle className="text-xl">{currentQuestion.pillarName}</CardTitle>
+                    <CardDescription className="text-white/90">
+                      Questão {currentQuestionIndex + 1} de {QUESTIONS.length}
+                    </CardDescription>
+                  </CardHeader>
+                );
+              })()}
               <CardContent className="pt-6">
                 <div className="space-y-6">
                   {/* Question Text */}

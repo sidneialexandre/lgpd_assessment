@@ -31,7 +31,8 @@ import {
   getDb,
   createRespondentSessionsForAssessment,
   createAssessmentGroupsForAssessment,
-  createGroupForAssessment
+  createGroupForAssessment,
+  getRespondentCompletionStats
 } from "./db";
 import { groups } from "../drizzle/schema";
 import { inArray } from "drizzle-orm";
@@ -328,7 +329,12 @@ export const appRouter = router({
         if (allCompleted) {
           await calculateConsolidatedResults(input.assessmentId);
         }
-        return await getAssessmentById(input.assessmentId);
+        const assessment = await getAssessmentById(input.assessmentId);
+        const stats = await getRespondentCompletionStats(input.assessmentId);
+        return {
+          ...assessment,
+          respondentsRemaining: stats.remaining,
+        };
       }),
 
     checkCompletion: protectedProcedure

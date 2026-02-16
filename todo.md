@@ -369,3 +369,61 @@
 5. OAuth callback decodifica state e extrai token
 6. OAuth callback redireciona para `/assessment?token=XXX`
 7. Avaliação abre direto para respondente responder
+
+
+## Ajustes na Avaliação
+
+- [ ] Ajustar cores dos labels por categoria:
+  - Azul para Segurança da Informação
+  - Verde para Conformidade
+  - Roxo para Cultura
+  
+- [ ] Implementar bloqueio de link já respondido:
+  - Verificar se sessão já foi respondida
+  - Exibir alerta se link já foi utilizado
+  - Impedir nova resposta com mesmo link
+  
+- [ ] Corrigir cálculo de respondentes faltantes:
+  - Verificar lógica de contagem
+  - Corrigir contador exibido ao finalizar
+
+
+## Ajustes de UI na Avaliação - Sessão 3
+
+- [x] Ajustar cores dos labels por categoria:
+  - [x] Azul para Segurança da Informação
+  - [x] Verde para Conformidade Documental
+  - [x] Roxo para Cultura de Privacidade
+  - [x] Função getPillarColors criada em Assessment.tsx
+  - [x] CardHeader agora usa cores dinâmicas baseado no pillarName
+
+- [x] Implementar bloqueio de link já respondido:
+  - [x] Verificar se sessão já foi respondida (isCompleted = 1)
+  - [x] Exibir alerta se link já foi utilizado
+  - [x] Impedir nova resposta com mesmo link
+  - [x] Página de erro com mensagem clara ao respondente
+
+- [x] Corrigir cálculo de respondentes faltantes:
+  - [x] Criada função getRespondentCompletionStats em db.ts
+  - [x] Calcula: totalExpected, completed, remaining
+  - [x] Modificado saveAnswers em routers.ts para retornar stats
+  - [x] Agora calcula corretamente: remaining = totalExpected - completed
+
+## Testes Implementados - Sessão 3
+
+- [x] 13 testes vitest criados em assessment-ui-fixes.test.ts
+  - [x] Testes de mapeamento de cores por pilar
+  - [x] Testes de detecção de sessão completada
+  - [x] Testes de bloqueio de acesso
+  - [x] Testes de cálculo de respondentes faltantes
+  - [x] Testes de mapeamento de gradientes de cores
+  - [x] Todos os 13 testes passando
+
+## Fluxo Correto Agora Implementado - Sessão 3
+
+1. Respondente acessa link com token
+2. Sistema verifica se sessão já foi respondida
+3. Se já respondida: mostra alerta e bloqueia acesso
+4. Se não respondida: abre avaliação com cores corretas
+5. Ao finalizar: calcula corretamente respondentes faltantes
+6. Mostra contador preciso de respondentes aguardando
