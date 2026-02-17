@@ -1,16 +1,17 @@
-import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, Plus, Trash2, TrendingUp } from "lucide-react";
 
 export default function MyAssessments() {
   const [location, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const [companies, setCompanies] = useState<any[]>([]);
+  const [assessmentHistory, setAssessmentHistory] = useState<Record<number, any[]>>({});
 
   // Get user's companies
   const getCompaniesQuery = trpc.company.list.useQuery(
@@ -23,6 +24,25 @@ export default function MyAssessments() {
       setCompanies(getCompaniesQuery.data);
     }
   }, [getCompaniesQuery.data]);
+
+  useEffect(() => {
+    const loadHistories = async () => {
+      const histories: Record<number, any[]> = {};
+      for (const company of companies) {
+        try {
+          const history = await (trpc.assessment.getHistoryWithScores as any).query({ companyId: company.id });
+          histories[company.id] = history;
+        } catch (error) {
+          console.error("Erro ao carregar historico:", error);
+          histories[company.id] = [];
+        }
+      }
+      setAssessmentHistory(histories);
+    };
+    if (companies.length > 0) {
+      loadHistories();
+    }
+  }, [companies]);
 
   const handleNewAssessment = () => {
     setLocation("/company-setup");
@@ -144,30 +164,63 @@ export default function MyAssessments() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">
-                      Criada em {new Date(company.createdAt).toLocaleDateString("pt-BR")}
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewAssessment(company.id);
-                        }}
-                      >
-                        Gerenciar
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => handleDeleteCompany(e, company.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        disabled={deleteCompanyMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">
+                        Criada em {new Date(company.createdAt).toLocaleDateString("pt-BR")}
+                      </span>
+                    </div>
+
+                    {assessmentHistory[company.id]?.length > 0 && (
+                      <div className="border-t pt-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-semibold text-slate-900">Historico de Avaliacoes</span>
+                        </div>
+                        <div className="space-y-2">
+                          {assessmentHistory[company.id].map((assessment: any) => (
+                            <div key={assessment.id} className="flex items-center justify-between text-sm bg-slate-50 p-2 rounded">
+                              <span className="text-slate-700">
+                                Avaliacao #{assessment.assessmentNumber}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={assessment.isCompleted === 1 ? "default" : "secondary"}>
+                                  {assessment.isCompleted === 1 ? "Concluida" : "Pendente"}
+                                </Badge>
+                                {assessment.isCompleted === 1 && (
+                                  <span className="text-xs font-semibold text-blue-600">
+                                    {assessment.compliancePercentage}%
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewAssessment(company.id);
+                          }}
+                        >
+                          Gerenciar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleDeleteCompany(e, company.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          disabled={deleteCompanyMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -179,4 +232,3 @@ export default function MyAssessments() {
     </div>
   );
 }
-

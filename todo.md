@@ -452,3 +452,26 @@
 - [x] Servidor compilando sem erros
 - [x] Painel admin mostra grupo, nome e email de cada respondente
 - [x] Botão "Enviar Emails" habilitado apenas quando todos os emails preenchidos
+
+
+## Ajuste de Painel de Avaliações - Histórico e Pontuação
+
+- [ ] Investigar estrutura de avaliações anteriores no banco de dados
+- [ ] Modificar barra de progresso para considerar avaliações anteriores
+- [ ] Somar pontuações já calculadas de respondentes em avaliações anteriores
+- [ ] Atualizar painel admin para exibir histórico de avaliações
+- [ ] Criar testes vitest para validar nova funcionalidade
+
+
+## Histórico de Avaliações e Pontuação Acumulada (Nova Sessão)
+
+- [x] Criar funções de banco de dados para buscar histórico de avaliações
+- [x] Implementar getCompanyAssessmentsWithScores para listar avaliações com pontuações
+- [x] Implementar getCompanyTotalScore para somar pontuações de todas avaliações
+- [x] Implementar getCompanyAverageCompliance para calcular média de conformidade
+- [x] Implementar getRespondentPreviousScores para buscar pontuações anteriores
+- [x] Adicionar procedimentos tRPC para expor funcionalidades
+- [x] Atualizar MyAssessments.tsx para exibir histórico de avaliações
+- [x] Exibir status (Concluida/Pendente) e percentual de conformidade
+- [x] Criar 9 testes vitest para validar cálculos de histórico
+- [x] Servidor compilando sem erros

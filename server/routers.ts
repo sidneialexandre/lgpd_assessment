@@ -35,7 +35,11 @@ import {
   getRespondentCompletionStats,
   updateRespondentInfo,
   getRespondentSessionsWithGroups,
-  areAllRespondentEmailsFilled
+  areAllRespondentEmailsFilled,
+  getCompanyAssessmentsWithScores,
+  getCompanyTotalScore,
+  getCompanyAverageCompliance,
+  getRespondentPreviousScores
 } from "./db";
 import { groups } from "../drizzle/schema";
 import { inArray } from "drizzle-orm";
@@ -284,6 +288,30 @@ export const appRouter = router({
       .input(z.object({ companyId: z.number() }))
       .query(async ({ input }) => {
         return await getLastAssessmentWithGroups(input.companyId);
+      }),
+
+    getHistoryWithScores: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(async ({ input }) => {
+        return await getCompanyAssessmentsWithScores(input.companyId);
+      }),
+
+    getTotalScore: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(async ({ input }) => {
+        return await getCompanyTotalScore(input.companyId);
+      }),
+
+    getAverageCompliance: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(async ({ input }) => {
+        return await getCompanyAverageCompliance(input.companyId);
+      }),
+
+    getPreviousRespondentScores: protectedProcedure
+      .input(z.object({ companyId: z.number(), currentAssessmentNumber: z.number() }))
+      .query(async ({ input }) => {
+        return await getRespondentPreviousScores(input.companyId, input.currentAssessmentNumber);
       }),
   }),
 

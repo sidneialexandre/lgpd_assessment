@@ -1,4 +1,4 @@
-import { eq, and, sum, desc } from "drizzle-orm";
+import { eq, and, sum, desc, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, companies, groups, assessments, answers, 
@@ -930,4 +930,124 @@ export async function areAllRespondentEmailsFilled(assessmentId: number): Promis
     .where(eq(respondentSessions.assessmentId, assessmentId));
 
   return sessions.length > 0 && sessions.every((s) => s.respondentEmail && s.respondentEmail.trim().length > 0);
+}
+
+
+// Get all assessments for a company with their scores
+export async function getCompanyAssessmentsWithScores(companyId: number): Promise<
+  Array<{
+    id: number;
+    assessmentNumber: number;
+    totalScore: number;
+    compliancePercentage: string;
+    isCompleted: number;
+    respondentCount: number;
+    completedCount: number;
+    createdAt: Date;
+  }>
+> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const assessmentsList = await db
+    .select({
+      id: assessments.id,
+      assessmentNumber: assessments.assessmentNumber,
+      totalScore: assessments.totalScore,
+      compliancePercentage: assessments.compliancePercentage,
+      isCompleted: assessments.isCompleted,
+      createdAt: assessments.createdAt,
+    })
+    .from(assessments)
+    .where(eq(assessments.companyId, companyId))
+    .orderBy(desc(assessments.assessmentNumber));
+
+  // For each assessment, count respondents
+  const enriched = await Promise.all(
+    assessmentsList.map(async (assessment) => {
+      const sessions = await db
+        .select()
+        .from(respondentSessions)
+        .where(eq(respondentSessions.assessmentId, assessment.id));
+
+      const completedCount = sessions.filter((s) => s.isCompleted === 1).length;
+
+      return {
+        ...assessment,
+        respondentCount: sessions.length,
+        completedCount,
+      };
+    })
+  );
+
+  return enriched;
+}
+
+// Get total score from all completed assessments for a company
+export async function getCompanyTotalScore(companyId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = await db
+    .select({ total: sum(assessments.totalScore) })
+    .from(assessments)
+    .where(and(eq(assessments.companyId, companyId), eq(assessments.isCompleted, 1)));
+
+  return result[0]?.total ? Number(result[0].total) : 0;
+}
+
+// Get average compliance percentage from all completed assessments for a company
+export async function getCompanyAverageCompliance(companyId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const completedAssessments = await db
+    .select({ compliancePercentage: assessments.compliancePercentage })
+    .from(assessments)
+    .where(and(eq(assessments.companyId, companyId), eq(assessments.isCompleted, 1)));
+
+  if (completedAssessments.length === 0) return 0;
+
+  const total = completedAssessments.reduce((sum, a) => {
+    return sum + (Number(a.compliancePercentage) || 0);
+  }, 0);
+
+  return Math.round((total / completedAssessments.length) * 100) / 100;
+}
+
+// Get respondent scores from previous assessments
+export async function getRespondentPreviousScores(
+  companyId: number,
+  currentAssessmentNumber: number
+): Promise<
+  Array<{
+    assessmentNumber: number;
+    respondentName: string | null;
+    respondentEmail: string | null;
+    totalScore: number;
+  }>
+> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const previousSessions = await db
+    .select({
+      assessmentNumber: assessments.assessmentNumber,
+      respondentName: respondentSessions.respondentName,
+      respondentEmail: respondentSessions.respondentEmail,
+      totalScore: respondentSessions.totalScore,
+    })
+    .from(respondentSessions)
+    .innerJoin(assessments, eq(respondentSessions.assessmentId, assessments.id))
+    .where(
+      and(
+        eq(assessments.companyId, companyId),
+        eq(assessments.isCompleted, 1),
+        // Get only assessments before current one
+        lt(assessments.assessmentNumber, currentAssessmentNumber)
+      )
+    )
+    .orderBy(desc(assessments.assessmentNumber), respondentSessions.respondentName);
+
+  return previousSessions;
 }
