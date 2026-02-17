@@ -1,0 +1,90 @@
+{
+  "query": "SELECT respondentNumber, groupId FROM respondentSessions LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xqg8NdygDYRt33.root --database ZBqZx56cHVWW4dhPYzUvCJ --execute SELECT respondentNumber, groupId FROM respondentSessions LIMIT 20;",
+  "rows": [
+    {
+      "respondentNumber": "1",
+      "groupId": "180001"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "180001"
+    },
+    {
+      "respondentNumber": "1",
+      "groupId": "180002"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "180002"
+    },
+    {
+      "respondentNumber": "1",
+      "groupId": "180003"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "180003"
+    },
+    {
+      "respondentNumber": "1",
+      "groupId": "180004"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "180004"
+    },
+    {
+      "respondentNumber": "1",
+      "groupId": "180005"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "180005"
+    },
+    {
+      "respondentNumber": "1",
+      "groupId": "180006"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "180006"
+    },
+    {
+      "respondentNumber": "1",
+      "groupId": "480007"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "480007"
+    },
+    {
+      "respondentNumber": "3",
+      "groupId": "480007"
+    },
+    {
+      "respondentNumber": "1",
+      "groupId": "480008"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "480008"
+    },
+    {
+      "respondentNumber": "1",
+      "groupId": "480009"
+    },
+    {
+      "respondentNumber": "2",
+      "groupId": "480009"
+    },
+    {
+      "respondentNumber": "3",
+      "groupId": "480009"
+    }
+  ],
+  "messages": [],
+  "stdout": "respondentNumber\tgroupId\n1\t180001\n2\t180001\n1\t180002\n2\t180002\n1\t180003\n2\t180003\n1\t180004\n2\t180004\n1\t180005\n2\t180005\n1\t180006\n2\t180006\n1\t480007\n2\t480007\n3\t480007\n1\t480008\n2\t480008\n1\t480009\n2\t480009\n3\t480009\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

@@ -485,3 +485,31 @@
 - [x] Validar total de links gerados corresponde ao total de respondentes
 - [x] Remover chamada duplicada de createRespondentSessionsForAssessment
 - [x] Criar 9 testes vitest para validar quantidade correta de respondentes
+
+## Testes de Integração - Quantidade de Respondentes (Nova Sessão)
+
+- [x] Criar testes de integração para validar quantidade correta de respondentes
+- [x] Teste 1: Criar exatamente 15 respondentes para um grupo com 15 respondentCount
+- [x] Teste 2: Criar exatamente 5 respondentes para um grupo com 5 respondentCount
+- [x] Teste 3: Criar total correto de respondentes para múltiplos grupos com diferentes quantidades
+- [x] Teste 4: Validar que não há duplicação de respondentes quando respondentCount é respeitado
+- [x] Teste 5: Verificar que respondent count corresponde à configuração do grupo
+- [x] Arquivo: server/__tests__/respondent-count-integration.test.ts
+- [x] Todos os 5 testes de integração passando
+- [x] Total de 89 testes vitest passando (10 arquivos de teste)
+
+## Correção Implementada - Quantidade de Respondentes
+
+A correção foi implementada no commit anterior (e01e3ef):
+- Movida chamada a `createRespondentSessionsForAssessment` para dentro do bloco `else` em routers.ts
+- Agora a função só é chamada quando NÃO há grupos fornecidos como parâmetro
+- Quando há grupos fornecidos (fluxo normal), `createGroupForAssessment` já cria os respondentes automaticamente
+- Isso evita duplicação e garante que a quantidade correta de respondentes é criada
+
+## Verificação em Produção
+
+- [x] Criada nova avaliação com 15 respondentes
+- [x] Painel de administração mostra exatamente 15 respondentes
+- [x] Gerados exatamente 15 links de acesso
+- [x] Sistema respeitando quantidade definida na configuração dos grupos
+- [x] Bug corrigido e validado em ambiente de produção

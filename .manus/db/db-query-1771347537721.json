@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_respondents FROM respondentSessions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xqg8NdygDYRt33.root --database ZBqZx56cHVWW4dhPYzUvCJ --execute SELECT COUNT(*) as total_respondents FROM respondentSessions;",
+  "rows": [
+    {
+      "total_respondents": "85"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_respondents\n85\n",
+  "stderr": "",
+  "execution_time_ms": 400
+}
