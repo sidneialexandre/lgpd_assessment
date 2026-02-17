@@ -475,3 +475,13 @@
 - [x] Exibir status (Concluida/Pendente) e percentual de conformidade
 - [x] Criar 9 testes vitest para validar cálculos de histórico
 - [x] Servidor compilando sem erros
+
+
+## Bugs de Quantidade de Respondentes
+
+- [x] Corrigir sistema criando sempre 2 respondentes por grupo ao invés de usar quantidade informada
+- [x] Corrigir discrepância entre respondentes definidos e links gerados (ex: 12 respondentes gerando 25 links)
+- [x] Validar quantidade de respondentes em cada grupo durante criação
+- [x] Validar total de links gerados corresponde ao total de respondentes
+- [x] Remover chamada duplicada de createRespondentSessionsForAssessment
+- [x] Criar 9 testes vitest para validar quantidade correta de respondentes

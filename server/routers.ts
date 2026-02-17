@@ -201,8 +201,8 @@ export const appRouter = router({
           }
         } else {
           await createAssessmentGroupsForAssessment(assessment.id, input.companyId);
+          await createRespondentSessionsForAssessment(assessment.id, input.companyId);
         }
-        await createRespondentSessionsForAssessment(assessment.id, input.companyId);
         return assessment;
       }),
 
