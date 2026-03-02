@@ -513,3 +513,76 @@ A correção foi implementada no commit anterior (e01e3ef):
 - [x] Gerados exatamente 15 links de acesso
 - [x] Sistema respeitando quantidade definida na configuração dos grupos
 - [x] Bug corrigido e validado em ambiente de produção
+
+
+## Bugs Reportados - Nova Sessão (Painel Admin e Relatório)
+
+- [ ] Painel de administração mostra apenas 12 respondentes mesmo com quantidade maior definida
+- [ ] Número de respondentes no painel não é coerente com número de links gerados
+- [ ] Resultado da avaliação é mostrado ao último respondente (não deveria)
+- [ ] Relatório PDF não inclui % de conformidade total
+- [ ] Relatório PDF não inclui pontuação de cada grupo
+- [ ] Relatório PDF não inclui % de conformidade de cada grupo
+
+## Implementações Novas - Relatório PDF
+
+- [ ] Ao finalizar avaliação via painel admin, gerar relatório PDF com:
+  - [ ] % Total de Conformidade da empresa
+  - [ ] Pontuação de cada grupo (G1-G6)
+  - [ ] % de Conformidade de cada grupo
+  - [ ] Comparação com avaliações anteriores (se existirem)
+  - [ ] Recomendações por pilar (Segurança, Conformidade, Cultura)
+
+- [ ] Remover resultado da avaliação exibido ao último respondente
+- [ ] Resultado deve ser acessível apenas via "Finalizar Avaliação" no painel admin
+
+
+## Bugs Reportados - Sessão 5 (Painel Admin e Relatório) - CORRIGIDOS
+
+- [x] Painel de administração mostra apenas 12 respondentes mesmo com quantidade maior definida - VERIFICADO: Painel está correto
+- [x] Número de respondentes no painel não é coerente com número de links gerados - VERIFICADO: 15 respondentes = 15 links
+- [x] Resultado da avaliação é mostrado ao último respondente (não deveria) - CORRIGIDO
+- [x] Relatório PDF não inclui % de conformidade total - IMPLEMENTADO
+- [x] Relatório PDF não inclui pontuação de cada grupo - IMPLEMENTADO
+- [x] Relatório PDF não inclui % de conformidade de cada grupo - IMPLEMENTADO
+
+## Implementações Novas - Relatório PDF (Concluídas)
+
+- [x] Ao finalizar avaliação via painel admin, gerar relatório PDF com:
+  - [x] % Total de Conformidade da empresa
+  - [x] Pontuação de cada grupo (G1-G6)
+  - [x] % de Conformidade de cada grupo
+  - [x] Seção de resultados no painel admin mostra todas as informações
+  - [ ] Comparação com avaliações anteriores (se existirem) - FUTURO
+  - [ ] Recomendações por pilar (Segurança, Conformidade, Cultura) - FUTURO
+
+- [x] Remover resultado da avaliação exibido ao último respondente - CORRIGIDO
+- [x] Resultado deve ser acessível apenas via "Finalizar Avaliação" no painel admin - IMPLEMENTADO
+
+## Alterações Implementadas - Sessão 5
+
+### Banco de Dados
+- [x] Adicionados campos totalScore e compliancePercentage à tabela assessmentGroups
+- [x] Migração executada com sucesso (drizzle/0011_breezy_the_enforcers.sql)
+
+### Lógica de Servidor
+- [x] Modificada função calculateConsolidatedResults em db.ts
+- [x] Agora calcula conformidade por grupo além de conformidade total
+- [x] Armazena pontuação e conformidade de cada grupo na tabela assessmentGroups
+
+### Interface do Painel Admin
+- [x] Adicionada seção "Resultados da Avaliação" em AssessmentAdmin.tsx
+- [x] Seção exibida apenas quando avaliação está finalizada (isCompleted = 1)
+- [x] Exibe conformidade total com pontuação total
+- [x] Exibe conformidade de cada grupo com barra de progresso
+- [x] Botão "Gerar Relatório PDF" para imprimir resultados
+
+### Interface do Respondente
+- [x] Removida exibição de resultado ao finalizar respondente
+- [x] Respondente vê apenas "Avaliação Enviada" com contador de respondentes aguardando
+- [x] Script Python criado para corrigir Assessment.tsx com encoding correto
+
+## Testes Pendentes
+- [ ] Criar testes vitest para validar cálculo de conformidade por grupo
+- [ ] Testar exibição de resultados no painel admin
+- [ ] Testar geração de PDF com print()

@@ -127,6 +127,8 @@ export const assessmentGroups = mysqlTable("assessmentGroups", {
   departmentName: varchar("departmentName", { length: 255 }).notNull(), // Department name (copy from group)
   respondentCount: int("respondentCount").notNull(), // Number of respondents in this group for this assessment
   respondentsCompleted: int("respondentsCompleted").default(0).notNull(), // Number who completed
+  totalScore: int("totalScore").default(0).notNull(), // Total score for this group
+  compliancePercentage: decimal("compliancePercentage", { precision: 5, scale: 2 }).default("0").notNull(), // Compliance percentage for this group
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

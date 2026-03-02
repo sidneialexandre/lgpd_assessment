@@ -517,6 +517,60 @@ export default function AssessmentAdmin() {
           </Card>
         </div>
 
+        {/* Results Section - Show only if assessment is finalized */}
+        {data.assessment.isCompleted === 1 && (
+          <Card className="border-blue-200 bg-blue-50 mb-8">
+            <CardHeader>
+              <CardTitle className="text-blue-900">Resultados da Avaliação</CardTitle>
+              <CardDescription className="text-blue-800">
+                Conformidade total e por grupo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Overall Compliance */}
+                <div className="p-4 bg-white rounded-lg border border-blue-200">
+                  <p className="text-sm text-gray-600 mb-2">Conformidade Total</p>
+                  <p className="text-4xl font-bold text-blue-600">{data.assessment.compliancePercentage}%</p>
+                  <p className="text-xs text-gray-500 mt-2">Pontuação Total: {data.assessment.totalScore.toLocaleString()}</p>
+                </div>
+
+                {/* Group Results */}
+                {data.groups && data.groups.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-gray-900">Conformidade por Grupo</h4>
+                    {data.groups.map((group: any) => (
+                      <div key={group.id} className="p-3 bg-white rounded-lg border border-blue-100">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-medium text-gray-900">{group.groupName} - {group.departmentName}</p>
+                            <p className="text-xs text-gray-500">Respondentes: {group.completedCount}/{group.respondentCount}</p>
+                          </div>
+                          <p className="text-2xl font-bold text-blue-600">{group.compliancePercentage}%</p>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${group.compliancePercentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Download PDF Button */}
+                <Button
+                  onClick={() => window.print()}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Gerar Relatório PDF
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Delete Assessment */}
         <Card className="border-red-200 bg-red-50">
           <CardHeader>

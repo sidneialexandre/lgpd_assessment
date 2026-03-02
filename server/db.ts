@@ -455,6 +455,42 @@ export async function calculateConsolidatedResults(assessmentId: number): Promis
   const maxScore = maxScorePerRespondent * sessions.length;
   const compliancePercentage = maxScore > 0 ? parseFloat(((totalScore / maxScore) * 100).toFixed(2)) : 0;
 
+  // Calculate compliance per group
+  const groupSessions = await db
+    .select()
+    .from(respondentSessions)
+    .where(eq(respondentSessions.assessmentId, assessmentId));
+
+  const groupIds = Array.from(new Set(groupSessions.map(s => s.groupId)));
+
+  for (const groupId of groupIds) {
+    const groupCompletedSessions = sessions.filter(s => s.groupId === groupId);
+    
+    let groupTotalScore = 0;
+    for (const session of groupCompletedSessions) {
+      const sessionAnswers = await getIndividualAnswers(session.id);
+      for (const answer of sessionAnswers) {
+        groupTotalScore += answer.score;
+      }
+    }
+
+    const maxScorePerRespondent = 10000;
+    const maxScore = maxScorePerRespondent * groupCompletedSessions.length;
+    const groupCompliancePercentage = maxScore > 0 ? parseFloat(((groupTotalScore / maxScore) * 100).toFixed(2)) : 0;
+
+    // Update assessment group with results
+    await db
+      .update(assessmentGroups)
+      .set({
+        totalScore: groupTotalScore,
+        compliancePercentage: groupCompliancePercentage.toString(),
+      })
+      .where(and(
+        eq(assessmentGroups.assessmentId, assessmentId),
+        eq(assessmentGroups.groupId, groupId)
+      ));
+  }
+
   // Update assessment with final results
   await db
     .update(assessments)
