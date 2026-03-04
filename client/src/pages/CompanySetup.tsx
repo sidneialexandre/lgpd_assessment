@@ -161,6 +161,8 @@ export default function CompanySetup() {
     }
 
     const nextGroupNumber = groups.length + 1;
+    const currentRespondentCount = newGroup.respondentCount; // Salvar a quantidade antes de resetar
+    
     setGroups([
       ...groups,
       {
@@ -172,7 +174,7 @@ export default function CompanySetup() {
     setNewGroup({
       groupName: `G${nextGroupNumber + 1}`,
       departmentName: "",
-      respondentCount: 1,
+      respondentCount: currentRespondentCount, // Manter a quantidade de respondentes do grupo anterior
     });
     setError("");
   };

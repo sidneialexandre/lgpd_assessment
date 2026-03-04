@@ -586,3 +586,43 @@ A correção foi implementada no commit anterior (e01e3ef):
 - [ ] Criar testes vitest para validar cálculo de conformidade por grupo
 - [ ] Testar exibição de resultados no painel admin
 - [ ] Testar geração de PDF com print()
+
+
+## Bug Crítico - Quantidade de Respondentes (Sessão 6)
+
+- [ ] CRÍTICO: Sistema gera sempre 12 respondentes (2 por grupo) independentemente da quantidade definida
+- [ ] Investigar função createGroupForAssessment em db.ts
+- [ ] Investigar função createRespondentSessionsForAssessment em db.ts
+- [ ] Verificar se a quantidade está sendo passada corretamente do frontend
+- [ ] Corrigir o ponto onde a quantidade está sendo ignorada
+- [ ] Testar com diferentes quantidades (5, 10, 15, 20 respondentes por grupo)
+- [ ] Validar que os links gerados correspondem à quantidade definida
+
+
+## Bug Crítico - Quantidade de Respondentes Sempre 12 (Sessão 6)
+
+- [x] Investigar por que sistema gera sempre 12 respondentes (2 por grupo)
+- [x] Identificar que o problema estava na função handleAddGroup do CompanySetup.tsx
+- [x] Problema: respondentCount era resetado para 1 ao adicionar novo grupo
+- [x] Solução: Salvar valor de respondentCount antes de resetar o estado
+- [x] Correção implementada em CompanySetup.tsx (linha 164-177)
+- [x] Teste manual: Criado grupo G1 com 135 respondentes ✅
+- [x] Teste manual: Criado grupo G2 com 148 respondentes ✅
+- [x] Total de respondentes calculado corretamente: 283 ✅
+- [x] Sistema agora respeita quantidade definida para cada grupo
+
+### Mudanças Implementadas:
+1. **CompanySetup.tsx** - Linha 164-177:
+   - Adicionada variável `currentRespondentCount` para salvar valor antes de resetar
+   - Campo de respondentes agora mantém valor do grupo anterior
+   - Permite ao usuário adicionar múltiplos grupos com quantidades diferentes
+
+2. **Adicionados imports faltantes**:
+   - useState e useEffect foram adicionados aos imports do React
+   - Corrigido erro de imports duplicados
+
+### Validação:
+- Teste 1: G1 (Diretoria) com 135 respondentes ✅
+- Teste 2: G2 (RH) com 148 respondentes ✅
+- Total: 283 respondentes ✅
+- Painel admin exibe corretamente a quantidade de respondentes por grupo

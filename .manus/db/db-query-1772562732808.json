@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, assessmentId, groupName, respondentCount FROM assessmentGroups WHERE groupName = 'G1' AND departmentName = 'TI' ORDER BY createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xqg8NdygDYRt33.root --database ZBqZx56cHVWW4dhPYzUvCJ --execute SELECT id, assessmentId, groupName, respondentCount FROM assessmentGroups WHERE groupName = 'G1' AND departmentName = 'TI' ORDER BY createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "120023",
+      "assessmentId": "600014",
+      "groupName": "G1",
+      "respondentCount": "5"
+    },
+    {
+      "id": "120016",
+      "assessmentId": "600009",
+      "groupName": "G1",
+      "respondentCount": "5"
+    },
+    {
+      "id": "120009",
+      "assessmentId": "600004",
+      "groupName": "G1",
+      "respondentCount": "5"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tassessmentId\tgroupName\trespondentCount\n120023\t600014\tG1\t5\n120016\t600009\tG1\t5\n120009\t600004\tG1\t5\n",
+  "stderr": "",
+  "execution_time_ms": 365
+}

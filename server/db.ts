@@ -785,6 +785,12 @@ export async function createGroupForAssessment(
   let groupId: number;
   if (existingGroup.length > 0) {
     groupId = existingGroup[0].id;
+    // Update respondentCount if it's different
+    if (existingGroup[0].respondentCount !== respondentCount) {
+      await db.update(groups)
+        .set({ respondentCount })
+        .where(eq(groups.id, groupId));
+    }
   } else {
     // Create new group
     const result = await db.insert(groups).values({
