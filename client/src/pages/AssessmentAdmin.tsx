@@ -1,11 +1,12 @@
-import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, Check, Trash2, Mail } from "lucide-react";
+import { Copy, Check, Trash2, Mail, FileText } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { generatePDFReport } from "@/components/PDFReportGenerator";
 
 export default function AssessmentAdmin() {
   const [location, setLocation] = useLocation();
@@ -130,6 +131,39 @@ export default function AssessmentAdmin() {
     if (assessmentId && allEmailsFilled) {
       await sendEmailsMutation.mutateAsync({ assessmentId });
     }
+  };
+
+  const handleGeneratePDF = () => {
+    if (!data) return;
+
+    const compliancePercent = typeof data.assessment.compliancePercentage === 'string'
+      ? parseFloat(data.assessment.compliancePercentage)
+      : data.assessment.compliancePercentage;
+
+    const reportData = {
+      companyName: 'Empresa ' + data.assessment.companyId,
+      assessmentNumber: data.assessment.assessmentNumber,
+      totalScore: data.assessment.totalScore,
+      compliancePercentage: compliancePercent,
+      totalRespondents: data.totalRespondents,
+      completedRespondents: data.completedRespondents,
+      groups: (data.groups || []).map((group: any) => {
+        const groupCompliance = typeof group.compliancePercentage === 'string'
+          ? parseFloat(group.compliancePercentage)
+          : (group.compliancePercentage || 0);
+        return {
+          groupName: group.groupName,
+          departmentName: group.departmentName,
+          respondentCount: group.respondentCount,
+          completedCount: group.completedCount,
+          totalScore: group.totalScore,
+          compliancePercentage: groupCompliance,
+        };
+      }),
+      generatedAt: new Date(),
+    };
+
+    generatePDFReport(reportData);
   };
 
   if (!assessmentId) {
@@ -561,9 +595,10 @@ export default function AssessmentAdmin() {
 
                 {/* Download PDF Button */}
                 <Button
-                  onClick={() => window.print()}
+                  onClick={handleGeneratePDF}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                 >
+                  <FileText className="w-4 h-4 mr-2" />
                   Gerar Relatório PDF
                 </Button>
               </div>

@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { callDataApi } from "./_core/dataApi";
 import { z } from "zod";
 import { 
   createCompany, 
@@ -437,18 +438,60 @@ export const appRouter = router({
         const assessment = await getAssessmentById(input.assessmentId);
         const company = assessment ? await getCompanyById(assessment.companyId) : null;
 
-        // TODO: Implementar envio de emails via serviço de email
-        // Por enquanto, apenas retorna sucesso
-        const emailsSent = sessions.map((session) => ({
-          email: session.respondentEmail,
-          name: session.respondentName,
-          respondentNumber: session.respondentNumber,
-        }));
+        if (!assessment) {
+          throw new Error("Avaliação não encontrada");
+        }
+
+        // Enviar emails para cada respondente
+        const emailResults = [];
+        for (const session of sessions) {
+          if (!session.respondentEmail) continue;
+
+          try {
+            const respondentLink = `${process.env.VITE_FRONTEND_URL || 'https://lgpdassess-zbqzx56c.manus.space'}/respondent?token=${session.accessToken}`;
+            
+            // Enviar email via API do Manus
+            await callDataApi("email_api", {
+              body: {
+                to: session.respondentEmail,
+                subject: `Avaliação de Conformidade LGPD - ${company?.razaoSocial || 'Sua Empresa'}`,
+                html: `
+                  <h2>Avaliação de Conformidade LGPD</h2>
+                  <p>Olá ${session.respondentName || 'Respondente'},</p>
+                  <p>Você foi selecionado para participar da avaliação de conformidade LGPD da empresa <strong>${company?.razaoSocial}</strong>.</p>
+                  <p>Clique no link abaixo para acessar a avaliação:</p>
+                  <p><a href="${respondentLink}">Acessar Avaliação</a></p>
+                  <p>Link direto: ${respondentLink}</p>
+                  <p>Obrigado pela sua participação!</p>
+                `,
+              },
+            });
+            
+            emailResults.push({
+              email: session.respondentEmail,
+              name: session.respondentName,
+              success: true,
+            });
+          } catch (error) {
+            console.error(`Erro ao enviar email para ${session.respondentEmail}:`, error);
+            emailResults.push({
+              email: session.respondentEmail,
+              name: session.respondentName,
+              success: false,
+              error: error instanceof Error ? error.message : "Erro desconhecido",
+            });
+          }
+        }
+
+        const successCount = emailResults.filter((r) => r.success).length;
+        const failureCount = emailResults.filter((r) => !r.success).length;
 
         return {
-          success: true,
-          emailsSent: emailsSent.length,
-          message: `${emailsSent.length} emails seriam enviados para os respondentes`,
+          success: failureCount === 0,
+          emailsSent: successCount,
+          emailsFailed: failureCount,
+          message: `${successCount} emails enviados${failureCount > 0 ? `, ${failureCount} falharam` : ''}`,
+          details: emailResults,
         };
       }),
   }),
