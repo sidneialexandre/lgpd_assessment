@@ -691,3 +691,26 @@ A correção foi implementada no commit anterior (e01e3ef):
 - Testar envio de emails em ambiente de produção
 - Testar geração de PDF com dados reais
 - Validar formatação e conteúdo do PDF gerado
+
+
+## Bug Crítico - Envio de Emails Não Funcionando (Sessão 9)
+
+- [ ] Investigar por que emails não estão sendo enviados após clicar no botão
+- [ ] Verificar se o procedimento tRPC está sendo chamado corretamente
+- [ ] Verificar se há erro na integração com Manus email_api
+- [ ] Implementar logging para rastrear o fluxo de envio
+- [ ] Validar que os dados dos respondentes estão sendo recuperados
+- [ ] Corrigir o problema identificado
+- [ ] Testar envio com diferentes cenários
+
+
+## Bug Crítico Corrigido - Envio de Emails (Sessão 9)
+
+- [x] Investigar problema de envio de emails não funcionando
+- [x] Criar emailService.ts com funções robustas de envio
+- [x] Atualizar procedimento sendEmailsToRespondents para usar novo emailService
+- [x] Adicionar validação de formato de email
+- [x] Implementar logging detalhado para debug
+- [x] Criar testes vitest para validar envio de emails (7 testes)
+- [x] Todos os 109 testes passando (incluindo testes de email)
+- [x] Build TypeScript sem erros

@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { callDataApi } from "./_core/dataApi";
+import { sendEmail } from "./_core/emailService";
 import { z } from "zod";
 import { 
   createCompany, 
@@ -429,12 +430,19 @@ export const appRouter = router({
     sendEmailsToRespondents: protectedProcedure
       .input(z.object({ assessmentId: z.number() }))
       .mutation(async ({ input }) => {
+        console.log("[EMAIL] Iniciando envio de emails para assessmentId:", input.assessmentId);
+        
         const allFilled = await areAllRespondentEmailsFilled(input.assessmentId);
+        console.log("[EMAIL] Todos os emails preenchidos?", allFilled);
+        
         if (!allFilled) {
           throw new Error("Nem todos os emails dos respondentes foram preenchidos");
         }
 
         const sessions = await getRespondentSessionsWithGroups(input.assessmentId);
+        console.log("[EMAIL] Sessões encontradas:", sessions.length);
+        console.log("[EMAIL] Dados das sessões:", JSON.stringify(sessions, null, 2));
+        
         const assessment = await getAssessmentById(input.assessmentId);
         const company = assessment ? await getCompanyById(assessment.companyId) : null;
 
@@ -442,38 +450,48 @@ export const appRouter = router({
           throw new Error("Avaliação não encontrada");
         }
 
+        console.log("[EMAIL] Empresa:", company?.razaoSocial);
+        console.log("[EMAIL] Total de sessões para enviar:", sessions.filter(s => s.respondentEmail).length);
+
         // Enviar emails para cada respondente
         const emailResults = [];
         for (const session of sessions) {
-          if (!session.respondentEmail) continue;
+          if (!session.respondentEmail) {
+            console.log("[EMAIL] Sessão sem email, pulando:", session.id);
+            continue;
+          }
 
           try {
             const respondentLink = `${process.env.VITE_FRONTEND_URL || 'https://lgpdassess-zbqzx56c.manus.space'}/respondent?token=${session.accessToken}`;
+            console.log("[EMAIL] Enviando para:", session.respondentEmail, "Link:", respondentLink);
             
-            // Enviar email via API do Manus
-            await callDataApi("email_api", {
-              body: {
-                to: session.respondentEmail,
-                subject: `Avaliação de Conformidade LGPD - ${company?.razaoSocial || 'Sua Empresa'}`,
-                html: `
-                  <h2>Avaliação de Conformidade LGPD</h2>
-                  <p>Olá ${session.respondentName || 'Respondente'},</p>
-                  <p>Você foi selecionado para participar da avaliação de conformidade LGPD da empresa <strong>${company?.razaoSocial}</strong>.</p>
-                  <p>Clique no link abaixo para acessar a avaliação:</p>
-                  <p><a href="${respondentLink}">Acessar Avaliação</a></p>
-                  <p>Link direto: ${respondentLink}</p>
-                  <p>Obrigado pela sua participação!</p>
-                `,
-              },
+            // Enviar email via emailService
+            const emailResult = await sendEmail({
+              to: session.respondentEmail,
+              subject: `Avaliação de Conformidade LGPD - ${company?.razaoSocial || 'Sua Empresa'}`,
+              html: `
+                <h2>Avaliação de Conformidade LGPD</h2>
+                <p>Olá ${session.respondentName || 'Respondente'},</p>
+                <p>Você foi selecionado para participar da avaliação de conformidade LGPD da empresa <strong>${company?.razaoSocial}</strong>.</p>
+                <p>Clique no link abaixo para acessar a avaliação:</p>
+                <p><a href="${respondentLink}">Acessar Avaliação</a></p>
+                <p>Link direto: ${respondentLink}</p>
+                <p>Obrigado pela sua participação!</p>
+              `,
             });
             
-            emailResults.push({
-              email: session.respondentEmail,
-              name: session.respondentName,
-              success: true,
-            });
+            if (emailResult.success) {
+              console.log("[EMAIL] Email enviado com sucesso para:", session.respondentEmail, "MessageId:", emailResult.messageId);
+              emailResults.push({
+                email: session.respondentEmail,
+                name: session.respondentName,
+                success: true,
+              });
+            } else {
+              throw new Error(emailResult.error || "Erro desconhecido ao enviar email");
+            }
           } catch (error) {
-            console.error(`Erro ao enviar email para ${session.respondentEmail}:`, error);
+            console.error(`[EMAIL] Erro ao enviar email para ${session.respondentEmail}:`, error);
             emailResults.push({
               email: session.respondentEmail,
               name: session.respondentName,
@@ -485,6 +503,8 @@ export const appRouter = router({
 
         const successCount = emailResults.filter((r) => r.success).length;
         const failureCount = emailResults.filter((r) => !r.success).length;
+
+        console.log("[EMAIL] Resumo:", { successCount, failureCount, total: emailResults.length });
 
         return {
           success: failureCount === 0,
