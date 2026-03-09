@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -84,9 +85,17 @@ export default function AssessmentAdmin() {
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
+  const { user } = useAuth();
+
   const handleFinalize = async () => {
+    if (user?.role !== "admin") {
+      alert("Apenas administradores podem finalizar a avaliação.");
+      return;
+    }
     if (assessmentId && confirm("Tem certeza que deseja finalizar a avaliação?")) {
       await finalizeAssessmentMutation.mutateAsync({ assessmentId });
+      // Redirecionar para página de resultados
+      setLocation(`/assessment-results?id=${assessmentId}&admin=true`);
     }
   };
 
