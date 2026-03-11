@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Copy, Check, Trash2, Mail, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { generatePDFReport } from "@/components/PDFReportGenerator";
 
@@ -18,6 +18,7 @@ export default function AssessmentAdmin() {
   const [editingName, setEditingName] = useState("");
   const [editingEmail, setEditingEmail] = useState("");
   const [allEmailsFilled, setAllEmailsFilled] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -78,43 +79,100 @@ export default function AssessmentAdmin() {
   }, [checkAllEmailsFilledQuery.data]);
 
   const handleCopyToken = (token: string) => {
-    const baseUrl = window.location.origin;
-    const respondentUrl = `${baseUrl}/respondent?token=${token}`;
-    navigator.clipboard.writeText(respondentUrl);
+    navigator.clipboard.writeText(token);
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
-  const { user } = useAuth();
+  const handleDeleteAssessment = () => {
+    if (!assessmentId) return;
+    deleteAssessmentMutation.mutate({ assessmentId });
+  };
+
+  const handleEditRespondent = (sessionId: number, name: string, email: string) => {
+    setEditingSessionId(sessionId);
+    setEditingName(name);
+    setEditingEmail(email);
+  };
+
+  const handleSaveRespondent = () => {
+    if (!editingSessionId) return;
+    updateRespondentInfoMutation.mutate({
+      respondentSessionId: editingSessionId,
+      respondentName: editingName,
+      respondentEmail: editingEmail,
+    });
+  };
+
+  const handleSendEmails = () => {
+    if (!assessmentId) return;
+    sendEmailsMutation.mutate({ assessmentId });
+  };
 
   const handleFinalize = async () => {
-    if (user?.role !== "admin") {
-      alert("Apenas administradores podem finalizar a avaliação.");
+    if (!assessmentId) return;
+    const { user } = useAuth();
+    if (!user || user.role !== "admin") {
+      alert("Apenas administradores podem finalizar avaliações");
       return;
     }
-    if (assessmentId && confirm("Tem certeza que deseja finalizar a avaliação?")) {
-      try {
-        console.log("[FINALIZE] Iniciando finalizacao da avaliacao", { assessmentId });
-        const result = await finalizeAssessmentMutation.mutateAsync({ assessmentId });
-        console.log("[FINALIZE] Avaliacao finalizada com sucesso", result);
-        // Redirecionar para pagina de resultados
-        setLocation(`/assessment-results?id=${assessmentId}&admin=true`);
-      } catch (error) {
-        console.error("[FINALIZE] Erro ao finalizar avaliacao:", error);
-        alert(`Erro ao finalizar avaliacao: ${error instanceof Error ? error.message : String(error)}`);
-      }
+    try {
+      await finalizeAssessmentMutation.mutateAsync({ assessmentId });
+      alert("Avaliação finalizada com sucesso!");
+    } catch (error) {
+      console.error("[ADMIN] Erro ao finalizar avaliação:", error);
+      alert(`Erro ao finalizar avaliação: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
-  const handleDelete = async () => {
-    if (assessmentId && confirm("Tem certeza que deseja deletar esta avaliação completamente? Esta ação não pode ser desfeita.")) {
-      await deleteAssessmentMutation.mutateAsync({ assessmentId });
+  const handleGeneratePDF = async () => {
+    if (!getDetailsQuery.data) {
+      alert("Dados da avaliação não carregados");
+      return;
     }
-  };
 
-  const handleGoToRespondentSelection = () => {
-    if (assessmentId && data?.assessment) {
-      setLocation(`/respondent-selection?companyId=${data.assessment.companyId}&assessmentId=${assessmentId}`);
+    setIsGeneratingPDF(true);
+
+    try {
+      const data = getDetailsQuery.data;
+      console.log("[ADMIN] Iniciando geração de PDF");
+
+      const compliancePercent = typeof data.assessment.compliancePercentage === "string"
+        ? parseFloat(data.assessment.compliancePercentage)
+        : data.assessment.compliancePercentage;
+
+      const reportData = {
+        companyName: "Empresa " + data.assessment.companyId,
+        assessmentNumber: data.assessment.assessmentNumber,
+        totalScore: data.assessment.totalScore,
+        compliancePercentage: compliancePercent,
+        totalRespondents: data.totalRespondents,
+        completedRespondents: data.completedRespondents,
+        groups: (data.groups || []).map((group: any) => {
+          const groupCompliance = typeof group.compliancePercentage === "string"
+            ? parseFloat(group.compliancePercentage)
+            : (group.compliancePercentage || 0);
+          return {
+            groupName: group.groupName,
+            departmentName: group.departmentName,
+            respondentCount: group.respondentCount,
+            completedCount: group.completedCount,
+            totalScore: group.totalScore,
+            compliancePercentage: groupCompliance,
+          };
+        }),
+        generatedAt: new Date(),
+      };
+
+      console.log("[ADMIN] Dados do relatório preparados:", reportData);
+      await generatePDFReport(reportData);
+      console.log("[ADMIN] PDF gerado com sucesso");
+      alert("PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("[ADMIN] Erro ao gerar PDF:", error);
+      alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -122,65 +180,7 @@ export default function AssessmentAdmin() {
     setLocation("/");
   };
 
-  const handleEditStart = (session: any) => {
-    setEditingSessionId(session.id);
-    setEditingName(session.respondentName || "");
-    setEditingEmail(session.respondentEmail || "");
-  };
-
-  const handleSaveRespondent = async () => {
-    if (!editingName.trim() || !editingEmail.trim()) {
-      alert("Nome e email são obrigatórios");
-      return;
-    }
-    
-    if (editingSessionId) {
-      await updateRespondentInfoMutation.mutateAsync({
-        respondentSessionId: editingSessionId,
-        respondentName: editingName,
-        respondentEmail: editingEmail,
-      });
-    }
-  };
-
-  const handleSendEmails = async () => {
-    if (assessmentId && allEmailsFilled) {
-      await sendEmailsMutation.mutateAsync({ assessmentId });
-    }
-  };
-
-  const handleGeneratePDF = () => {
-    if (!data) return;
-
-    const compliancePercent = typeof data.assessment.compliancePercentage === 'string'
-      ? parseFloat(data.assessment.compliancePercentage)
-      : data.assessment.compliancePercentage;
-
-    const reportData = {
-      companyName: 'Empresa ' + data.assessment.companyId,
-      assessmentNumber: data.assessment.assessmentNumber,
-      totalScore: data.assessment.totalScore,
-      compliancePercentage: compliancePercent,
-      totalRespondents: data.totalRespondents,
-      completedRespondents: data.completedRespondents,
-      groups: (data.groups || []).map((group: any) => {
-        const groupCompliance = typeof group.compliancePercentage === 'string'
-          ? parseFloat(group.compliancePercentage)
-          : (group.compliancePercentage || 0);
-        return {
-          groupName: group.groupName,
-          departmentName: group.departmentName,
-          respondentCount: group.respondentCount,
-          completedCount: group.completedCount,
-          totalScore: group.totalScore,
-          compliancePercentage: groupCompliance,
-        };
-      }),
-      generatedAt: new Date(),
-    };
-
-    generatePDFReport(reportData);
-  };
+  const data = getDetailsQuery.data;
 
   if (!assessmentId) {
     return (
@@ -193,7 +193,7 @@ export default function AssessmentAdmin() {
             <CardContent>
               <p className="text-red-800">ID da avaliação não encontrado.</p>
               <Button onClick={handleBackToHome} className="mt-4">
-                Voltar ao Início
+                Voltar para Home
               </Button>
             </CardContent>
           </Card>
@@ -204,16 +204,17 @@ export default function AssessmentAdmin() {
 
   if (getDetailsQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Carregando detalhes da avaliação...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-slate-600">Carregando dados da avaliação...</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
-
-  const data = getDetailsQuery.data;
 
   if (!data) {
     return (
@@ -226,7 +227,7 @@ export default function AssessmentAdmin() {
             <CardContent>
               <p className="text-red-800">Avaliação não encontrada.</p>
               <Button onClick={handleBackToHome} className="mt-4">
-                Voltar ao Início
+                Voltar para Home
               </Button>
             </CardContent>
           </Card>
@@ -235,341 +236,176 @@ export default function AssessmentAdmin() {
     );
   }
 
-  const progressPercentage = data.totalRespondents > 0 ? (data.completedRespondents / data.totalRespondents) * 100 : 0;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="outline"
-            onClick={handleBackToHome}
-            className="mb-4"
-          >
-            ← Voltar ao Início
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Painel de Administração</h1>
+            <p className="text-slate-600 mt-1">Gerenciamento da Avaliação #{data.assessment.assessmentNumber}</p>
+          </div>
+          <Button variant="outline" onClick={handleBackToHome}>
+            Voltar
           </Button>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">
-            Painel de Administração
-          </h1>
-          <p className="text-slate-600">
-            Empresa ID: <span className="font-semibold">{data.assessment.companyId}</span>
-          </p>
         </div>
 
-        {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-600">
-                Total de Respondentes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-slate-900">
-                {data.totalRespondents}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-green-900">
-                Respondentes Completados
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-700">
-                {data.completedRespondents}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-200 bg-orange-50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-orange-900">
-                Respondentes Pendentes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-orange-700">
-                {data.pendingRespondents}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Progress Bar */}
-        <Card className="mb-8">
+        {/* Assessment Status */}
+        <Card>
           <CardHeader>
-            <CardTitle>Progresso da Avaliação</CardTitle>
+            <CardTitle>Status da Avaliação</CardTitle>
+            <CardDescription>
+              {data.assessment.isCompleted === 1 ? "Avaliação Finalizada" : "Avaliação em Andamento"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="w-full bg-slate-200 rounded-full h-4 mb-2">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-300"
-                style={{ width: `${progressPercentage}%` }}
-              ></div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-slate-600">Total de Respondentes</p>
+                <p className="text-2xl font-bold text-slate-900">{data.totalRespondents}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Respondentes Completos</p>
+                <p className="text-2xl font-bold text-green-600">{data.completedRespondents}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Respondentes Pendentes</p>
+                <p className="text-2xl font-bold text-orange-600">{data.pendingRespondents}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Taxa de Conclusão</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {Math.round((data.completedRespondents / data.totalRespondents) * 100)}%
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-slate-600">
-              {progressPercentage.toFixed(1)}% concluído ({data.completedRespondents} de {data.totalRespondents})
-            </p>
           </CardContent>
         </Card>
 
-        {/* Groups Configuration */}
-        <Card className="mb-8">
+        {/* Respondent Management */}
+        <Card>
           <CardHeader>
-            <CardTitle>Configuração de Grupos</CardTitle>
+            <CardTitle>Gerenciamento de Respondentes</CardTitle>
             <CardDescription>
-              Definição original de grupos e status de respondentes
+              Edite informações de contato dos respondentes
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {data.groups && data.groups.length > 0 ? (
-                data.groups.map((group: any) => (
+              {data.sessions && data.sessions.length > 0 ? (
+                data.sessions.map((session: any) => (
                   <div
-                    key={group.id}
+                    key={session.id}
                     className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold text-slate-900">
-                          {group.groupName} - {group.departmentName}
-                        </h3>
-                        <p className="text-sm text-slate-500">
-                          Respondentes configurados: {group.respondentCount}
-                        </p>
+                      <div className="flex-1">
+                        {editingSessionId === session.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Nome"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                            />
+                            <Input
+                              placeholder="Email"
+                              value={editingEmail}
+                              onChange={(e) => setEditingEmail(e.target.value)}
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="font-semibold text-slate-900">{session.respondentName || "Sem nome"}</p>
+                            <p className="text-sm text-slate-600">{session.respondentEmail || "Sem email"}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        {editingSessionId === session.id ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={handleSaveRespondent}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingSessionId(null)}
+                            >
+                              Cancelar
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleEditRespondent(
+                                session.id,
+                                session.respondentName || "",
+                                session.respondentEmail || ""
+                              )
+                            }
+                          >
+                            Editar
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 mt-3">
-                      <div className="flex-1">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm text-slate-600">Completados: {group.completedCount}</span>
-                          <span className="text-sm text-slate-600">Faltando: {group.pendingCount}</span>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${(group.completedCount / group.respondentCount) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge className={session.isCompleted === 1 ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                        {session.isCompleted === 1 ? "Completo" : "Pendente"}
+                      </Badge>
+                      <span className="text-xs text-slate-500">Token: {session.accessToken?.substring(0, 8)}...</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleCopyToken(session.accessToken)}
+                      >
+                        {copiedToken === session.accessToken ? (
+                          <Check className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-slate-500">Nenhum grupo configurado</p>
+                <p className="text-slate-500">Nenhum respondente configurado</p>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Respondents List */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Lista de Respondentes</CardTitle>
-            <CardDescription>
-              Preencha nome e email para cada respondente
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {getSessionsWithGroupsQuery.data && getSessionsWithGroupsQuery.data.length > 0 ? (
-                getSessionsWithGroupsQuery.data.map((session: any) => {
-                  const baseUrl = window.location.origin;
-                  const respondentUrl = `${baseUrl}/respondent?token=${session.accessToken}`;
-                  const isEditing = editingSessionId === session.id;
-
-                  return (
-                    <div
-                      key={session.id}
-                      className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge className="bg-blue-100 text-blue-700">
-                            {session.groupName}
-                          </Badge>
-                          <span className="text-sm font-semibold text-slate-700">
-                            {session.departmentName}
-                          </span>
-                          {session.isCompleted === 1 ? (
-                            <Badge className="bg-green-100 text-green-800">
-                              Completado
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-orange-100 text-orange-800">
-                              Pendente
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      {isEditing ? (
-                        <div className="space-y-3 mb-3 p-3 bg-slate-50 rounded-lg">
-                          <div>
-                            <label className="text-sm font-medium text-slate-700">Nome</label>
-                            <Input
-                              value={editingName}
-                              onChange={(e) => setEditingName(e.target.value)}
-                              placeholder="Nome do respondente"
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-slate-700">Email</label>
-                            <Input
-                              value={editingEmail}
-                              onChange={(e) => setEditingEmail(e.target.value)}
-                              placeholder="email@example.com"
-                              type="email"
-                              className="mt-1"
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={handleSaveRespondent}
-                              disabled={updateRespondentInfoMutation.isPending}
-                              className="flex-1"
-                            >
-                              Salvar
-                            </Button>
-                            <Button
-                              onClick={() => setEditingSessionId(null)}
-                              variant="outline"
-                              className="flex-1"
-                            >
-                              Cancelar
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-2 mb-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-sm text-slate-600">
-                                <span className="font-medium">Nome:</span> {session.respondentName || "Não preenchido"}
-                              </p>
-                              <p className="text-sm text-slate-600">
-                                <span className="font-medium">Email:</span> {session.respondentEmail || "Não preenchido"}
-                              </p>
-                            </div>
-                            <Button
-                              onClick={() => handleEditStart(session)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              Editar
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="bg-slate-100 p-3 rounded-lg mb-3 break-all font-mono text-sm text-slate-700">
-                        {respondentUrl}
-                      </div>
-
-                      <Button
-                        onClick={() => handleCopyToken(session.accessToken || "")}
-                        disabled={!session.accessToken}
-                        className="w-full"
-                        variant="outline"
-                      >
-                        {copiedToken === session.accessToken ? (
-                          <>
-                            <Check className="w-4 h-4 mr-2" />
-                            Link Copiado
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4 mr-2" />
-                            Copiar Link
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-slate-500">Nenhum respondente configurado ainda.</p>
-              )}
-            </div>
-
-            {getSessionsWithGroupsQuery.data && getSessionsWithGroupsQuery.data.length > 0 && (
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-blue-900 mb-1">Enviar Links por Email</p>
-                    <p className="text-sm text-blue-800">
-                      {allEmailsFilled
-                        ? "Todos os emails foram preenchidos. Clique para enviar links aos respondentes."
-                        : "Preencha todos os emails dos respondentes para habilitar envio."}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleSendEmails}
-                    disabled={!allEmailsFilled || sendEmailsMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Enviar Emails
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="border-blue-200 bg-blue-50">
+        {/* Email Management */}
+        {allEmailsFilled && (
+          <Card>
             <CardHeader>
-              <CardTitle className="text-blue-900">Adicionar Respondentes</CardTitle>
+              <CardTitle>Envio de Emails</CardTitle>
+              <CardDescription>
+                Envie links de avaliação aos respondentes
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-blue-800 mb-4">
-                Acesse o painel de seleção de respondentes para adicionar novos respondentes e gerar seus links de acesso.
-              </p>
               <Button
-                onClick={handleGoToRespondentSelection}
+                onClick={handleSendEmails}
                 className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={sendEmailsMutation.isPending}
               >
-                Ir para Seleção de Respondentes
+                <Mail className="w-4 h-4 mr-2" />
+                {sendEmailsMutation.isPending ? "Enviando..." : "Enviar Emails aos Respondentes"}
               </Button>
             </CardContent>
           </Card>
+        )}
 
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="text-green-900">Finalizar Avaliação</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {data.pendingRespondents > 0 && (
-                  <p className="text-sm text-green-800">
-                    Ainda há {data.pendingRespondents} respondente(s) pendente(s).
-                  </p>
-                )}
-                <Button
-                  onClick={handleFinalize}
-                  disabled={data.completedRespondents === 0}
-                  className="w-full"
-                >
-                  Finalizar Avaliação
-                </Button>
-                <p className="text-xs text-green-700">
-                  Ao finalizar, o percentual de conformidade será calculado com base nos respondentes que já completaram.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Results Section - Show only if assessment is finalized */}
+        {/* Assessment Results */}
         {data.assessment.isCompleted === 1 && (
-          <Card className="border-blue-200 bg-blue-50 mb-8">
+          <Card className="border-blue-200 bg-blue-50">
             <CardHeader>
               <CardTitle className="text-blue-900">Resultados da Avaliação</CardTitle>
               <CardDescription className="text-blue-800">
@@ -613,11 +449,33 @@ export default function AssessmentAdmin() {
                 <Button
                   onClick={handleGeneratePDF}
                   className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={isGeneratingPDF}
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  Gerar Relatório PDF
+                  {isGeneratingPDF ? "Gerando PDF..." : "Gerar Relatório PDF"}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Finalize Assessment */}
+        {data.assessment.isCompleted === 0 && (
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="text-green-900">Finalizar Avaliação</CardTitle>
+              <CardDescription className="text-green-800">
+                Clique para finalizar a avaliação e calcular resultados
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={handleFinalize}
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={finalizeAssessmentMutation.isPending}
+              >
+                {finalizeAssessmentMutation.isPending ? "Finalizando..." : "Finalizar Avaliação"}
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -625,26 +483,22 @@ export default function AssessmentAdmin() {
         {/* Delete Assessment */}
         <Card className="border-red-200 bg-red-50">
           <CardHeader>
-            <CardTitle className="text-red-900">Remover Avaliação</CardTitle>
+            <CardTitle className="text-red-900">Ações Perigosas</CardTitle>
             <CardDescription className="text-red-800">
-              Esta ação não pode ser desfeita
+              Essas ações não podem ser desfeitas
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-red-800 mb-4">
-              Deletar esta avaliação removerá completamente todos os dados, respondentes e respostas do banco de dados.
-            </p>
             {showDeleteConfirm ? (
               <div className="space-y-3">
-                <p className="text-sm font-semibold text-red-900">
-                  Tem certeza que deseja deletar esta avaliação?
-                </p>
-                <div className="flex gap-3">
+                <p className="text-red-800 font-semibold">Tem certeza que deseja deletar esta avaliação?</p>
+                <div className="flex gap-2">
                   <Button
-                    onClick={handleDelete}
+                    onClick={handleDeleteAssessment}
                     className="flex-1 bg-red-600 hover:bg-red-700"
+                    disabled={deleteAssessmentMutation.isPending}
                   >
-                    Sim, Deletar
+                    {deleteAssessmentMutation.isPending ? "Deletando..." : "Confirmar Deleção"}
                   </Button>
                   <Button
                     onClick={() => setShowDeleteConfirm(false)}

@@ -1,4 +1,5 @@
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export interface ReportData {
   companyName: string;
@@ -18,29 +19,65 @@ export interface ReportData {
   generatedAt: Date;
 }
 
-export function generatePDFReport(data: ReportData) {
+export async function generatePDFReport(data: ReportData) {
   try {
     console.log('[PDF] Iniciando geracao de PDF', { companyName: data.companyName, assessmentNumber: data.assessmentNumber });
     
-    const element = document.createElement("div");
-    element.innerHTML = generateHTMLContent(data);
+    // Create container element
+    const container = document.createElement("div");
+    container.innerHTML = generateHTMLContent(data);
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.width = '210mm';
+    container.style.padding = '20px';
+    container.style.backgroundColor = 'white';
+    document.body.appendChild(container);
 
-    const options: any = {
-      margin: 10,
-      filename: `LGPD_Relatorio_${data.companyName.replace(/\s+/g, "_")}_${data.assessmentNumber}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
-    };
-
-    console.log('[PDF] Opcoes configuradas', options);
+    console.log('[PDF] Convertendo HTML para canvas...');
     
-    if (!html2pdf) {
-      throw new Error('html2pdf nao esta disponivel');
+    // Convert HTML to canvas
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+    });
+
+    console.log('[PDF] Canvas criado com sucesso');
+
+    // Create PDF
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const imgWidth = 210; // A4 width in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    // Add image to PDF (handling multiple pages if needed)
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= 297; // A4 height in mm
+
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= 297;
     }
-    
-    html2pdf().set(options).from(element).save();
-    console.log('[PDF] PDF gerado com sucesso');
+
+    // Save PDF
+    const filename = `LGPD_Relatorio_${data.companyName.replace(/\s+/g, "_")}_${data.assessmentNumber}.pdf`;
+    pdf.save(filename);
+
+    console.log('[PDF] PDF gerado e salvo com sucesso:', filename);
+
+    // Clean up
+    document.body.removeChild(container);
   } catch (error) {
     console.error('[PDF] Erro ao gerar PDF:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : String(error)}`);
