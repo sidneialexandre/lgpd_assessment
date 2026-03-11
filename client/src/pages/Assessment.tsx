@@ -167,36 +167,21 @@ export default function Assessment() {
       });
 
       if (assessment) {
-        const isAssessmentCompleted = assessment.isCompleted === 1;
-        let compliancePercentageNum = 0;
-        if (typeof assessment.compliancePercentage === "string") {
-          compliancePercentageNum = parseFloat(assessment.compliancePercentage);
-        } else if (typeof assessment.compliancePercentage === "number") {
-          compliancePercentageNum = assessment.compliancePercentage;
-        }
+        // IMPORTANTE: Respondentes NUNCA devem ver o resultado da avaliacao
+        // O resultado so eh exibido para administrador apos clicar "Finalizar Avaliacao"
+        // Respondentes sempre veem apenas a mensagem de "Aguardando finalizacao"
+        
+        const groups = getGroupsQuery.data || [];
+        const totalRespondents = groups.reduce((sum, g) => sum + g.respondentCount, 0);
+        const respondentsRemaining = Math.max(0, totalRespondents - 1);
 
-        if (isAssessmentCompleted) {
-          setResult({
-            isCompleted: true,
-            totalScore: assessment.totalScore || 0,
-            compliancePercentage: compliancePercentageNum,
-            company: getCompanyQuery.data ? {
-              cnpj: getCompanyQuery.data.cnpj,
-              razaoSocial: getCompanyQuery.data.razaoSocial,
-            } : undefined,
-          });
-        } else {
-          const groups = getGroupsQuery.data || [];
-          const totalRespondents = groups.reduce((sum, g) => sum + g.respondentCount, 0);
-          const respondentsRemaining = Math.max(0, totalRespondents - 1);
-
-          setResult({
-            isCompleted: false,
-            totalScore: assessment.totalScore || 0,
-            compliancePercentage: compliancePercentageNum,
-            respondentsRemaining,
-          });
-        }
+        // Sempre mostrar estado "nao concluido" para respondentes
+        setResult({
+          isCompleted: false,
+          totalScore: 0,
+          compliancePercentage: 0,
+          respondentsRemaining,
+        });
       }
 
       setIsCompleted(true);

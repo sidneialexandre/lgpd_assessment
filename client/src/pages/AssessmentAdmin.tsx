@@ -93,9 +93,16 @@ export default function AssessmentAdmin() {
       return;
     }
     if (assessmentId && confirm("Tem certeza que deseja finalizar a avaliação?")) {
-      await finalizeAssessmentMutation.mutateAsync({ assessmentId });
-      // Redirecionar para página de resultados
-      setLocation(`/assessment-results?id=${assessmentId}&admin=true`);
+      try {
+        console.log("[FINALIZE] Iniciando finalizacao da avaliacao", { assessmentId });
+        const result = await finalizeAssessmentMutation.mutateAsync({ assessmentId });
+        console.log("[FINALIZE] Avaliacao finalizada com sucesso", result);
+        // Redirecionar para pagina de resultados
+        setLocation(`/assessment-results?id=${assessmentId}&admin=true`);
+      } catch (error) {
+        console.error("[FINALIZE] Erro ao finalizar avaliacao:", error);
+        alert(`Erro ao finalizar avaliacao: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   };
 
