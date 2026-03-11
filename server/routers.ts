@@ -43,8 +43,8 @@ import {
   getCompanyAverageCompliance,
   getRespondentPreviousScores
 } from "./db";
-import { groups } from "../drizzle/schema";
-import { inArray } from "drizzle-orm";
+import { groups, assessmentGroups } from "../drizzle/schema";
+import { inArray, eq } from "drizzle-orm";
 
 export const appRouter = router({
   system: systemRouter,
@@ -247,15 +247,33 @@ export const appRouter = router({
         let totalExpectedRespondents = 0;
         groups.forEach(g => totalExpectedRespondents += g.respondentCount);
         
+        // Get assessment group data with compliance percentages
+        const db = await getDb();
+        const assessmentGroupsData = db ? await db
+          .select()
+          .from(assessmentGroups)
+          .where(eq(assessmentGroups.assessmentId, input.assessmentId)) : [];
+        
         const groupStats = groups.map(group => {
           const groupSessions = sessions.filter(s => s.groupId === group.id);
           const completedCount = groupSessions.filter(s => s.isCompleted === 1).length;
           const pendingCount = group.respondentCount - completedCount;
+          
+          // Get compliance data for this group
+          const groupData = assessmentGroupsData.find(ag => ag.groupId === group.id);
+          const compliancePercentage = groupData?.compliancePercentage 
+            ? (typeof groupData.compliancePercentage === 'string' 
+              ? parseFloat(groupData.compliancePercentage) 
+              : groupData.compliancePercentage)
+            : 0;
+          
           return {
             ...group,
             completedCount,
             pendingCount,
             sessionsCreated: groupSessions.length,
+            compliancePercentage,
+            totalScore: groupData?.totalScore || 0,
           };
         });
 

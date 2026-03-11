@@ -1,4 +1,4 @@
-import html2pdf from "html2pdf.js";
+import html2pdf from 'html2pdf.js';
 
 export interface ReportData {
   companyName: string;
@@ -19,18 +19,32 @@ export interface ReportData {
 }
 
 export function generatePDFReport(data: ReportData) {
-  const element = document.createElement("div");
-  element.innerHTML = generateHTMLContent(data);
+  try {
+    console.log('[PDF] Iniciando geracao de PDF', { companyName: data.companyName, assessmentNumber: data.assessmentNumber });
+    
+    const element = document.createElement("div");
+    element.innerHTML = generateHTMLContent(data);
 
-  const options: any = {
-    margin: 10,
-    filename: `LGPD_Relatorio_${data.companyName.replace(/\s+/g, "_")}_${data.assessmentNumber}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
-  };
+    const options: any = {
+      margin: 10,
+      filename: `LGPD_Relatorio_${data.companyName.replace(/\s+/g, "_")}_${data.assessmentNumber}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
+    };
 
-  html2pdf().set(options).from(element).save();
+    console.log('[PDF] Opcoes configuradas', options);
+    
+    if (!html2pdf) {
+      throw new Error('html2pdf nao esta disponivel');
+    }
+    
+    html2pdf().set(options).from(element).save();
+    console.log('[PDF] PDF gerado com sucesso');
+  } catch (error) {
+    console.error('[PDF] Erro ao gerar PDF:', error);
+    alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 function generateHTMLContent(data: ReportData): string {

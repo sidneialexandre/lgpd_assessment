@@ -750,3 +750,14 @@ A correção foi implementada no commit anterior (e01e3ef):
 - [x] Criados 23 novos testes de bug fixes
 - [x] Todos os 132 testes passando
 - [x] Build TypeScript sem erros
+
+
+## Bugs - Sessao 13
+
+- [x] Bug: Conformidade por grupo nao esta calculando % correto no painel admin (CORRIGIDO)
+- [x] Bug: Botao "Gerar PDF" nao esta funcionando (CORRIGIDO)
+- [x] Investigar logica de calculo de conformidade por grupo (RESOLVIDO)
+- [x] Debugar geracao de PDF (RESOLVIDO)
+- [x] Criados 18 novos testes de admin panel fixes
+- [x] Todos os 145 testes passando
+- [x] Build TypeScript sem erros
