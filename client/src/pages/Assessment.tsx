@@ -89,12 +89,18 @@ export default function Assessment() {
   const resolvedAssessmentId = currentSessionData?.assessmentId ? String(currentSessionData.assessmentId) : assessmentId;
   const resolvedCompanyId = token ? (getCompanyIdByTokenQuery.data?.companyId ? String(getCompanyIdByTokenQuery.data.companyId) : undefined) : companyId;
 
-  const getCompanyQuery = trpc.company.getById.useQuery(
+  const getCompanyQuery = token ? trpc.company.getByIdPublic.useQuery(
+    { companyId: parseInt(resolvedCompanyId || "0") },
+    { enabled: !!resolvedCompanyId }
+  ) : trpc.company.getById.useQuery(
     { companyId: parseInt(resolvedCompanyId || "0") },
     { enabled: !!resolvedCompanyId }
   );
 
-  const getGroupsQuery = trpc.group.getByCompany.useQuery(
+  const getGroupsQuery = token ? trpc.group.getByCompanyPublic.useQuery(
+    { companyId: parseInt(resolvedCompanyId || "0") },
+    { enabled: !!resolvedCompanyId }
+  ) : trpc.group.getByCompany.useQuery(
     { companyId: parseInt(resolvedCompanyId || "0") },
     { enabled: !!resolvedCompanyId }
   );

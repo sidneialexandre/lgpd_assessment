@@ -100,6 +100,12 @@ export const appRouter = router({
         return await getCompanyById(input.companyId);
       }),
 
+    getByIdPublic: publicProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(async ({ input }) => {
+        return await getCompanyById(input.companyId);
+      }),
+
      list: protectedProcedure.query(async ({ ctx }) => {
       return await getUserCompanies(ctx.user.id);
     }),
@@ -127,6 +133,12 @@ export const appRouter = router({
       }),
 
     getByCompany: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(async ({ input }) => {
+        return await getCompanyGroups(input.companyId);
+      }),
+
+    getByCompanyPublic: publicProcedure
       .input(z.object({ companyId: z.number() }))
       .query(async ({ input }) => {
         return await getCompanyGroups(input.companyId);
@@ -480,8 +492,9 @@ export const appRouter = router({
           }
 
           try {
-            const respondentLink = `${process.env.VITE_FRONTEND_URL || 'https://lgpdassess-zbqzx56c.manus.space'}/respondent?token=${session.accessToken}`;
-            console.log("[EMAIL] Enviando para:", session.respondentEmail, "Link:", respondentLink);
+            const respondentLink = `/respondent?token=${session.accessToken}`;
+            const absoluteLink = `${process.env.VITE_FRONTEND_URL || 'https://lgpdassess-zbqzx56c.manus.space'}${respondentLink}`;
+            console.log("[EMAIL] Enviando para:", session.respondentEmail, "Link absoluto:", absoluteLink);
             
             // Enviar email via emailService
             const emailResult = await sendEmail({
@@ -492,8 +505,8 @@ export const appRouter = router({
                 <p>Olá ${session.respondentName || 'Respondente'},</p>
                 <p>Você foi selecionado para participar da avaliação de conformidade LGPD da empresa <strong>${company?.razaoSocial}</strong>.</p>
                 <p>Clique no link abaixo para acessar a avaliação:</p>
-                <p><a href="${respondentLink}">Acessar Avaliação</a></p>
-                <p>Link direto: ${respondentLink}</p>
+                <p><a href="${absoluteLink}">Acessar Avaliação</a></p>
+                <p>Link direto: ${absoluteLink}</p>
                 <p>Obrigado pela sua participação!</p>
               `,
             });

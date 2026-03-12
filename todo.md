@@ -813,3 +813,12 @@ A correção foi implementada no commit anterior (e01e3ef):
 - [x] PDFReportGenerator reescrito com APENAS inline styles (sem classes Tailwind)
 - [x] Todos os 163 testes passando
 - [x] Build TypeScript sem erros
+
+
+## Bugs Não Resolvidos - Sessão 17
+
+- [ ] Bug: Erro oklch ao gerar PDF continua ocorrendo (AINDA NÃO RESOLVIDO)
+- [ ] Bug: Links dos respondentes não estão funcionais (AINDA NÃO RESOLVIDO)
+- [ ] Bug: Design do painel de administração não foi melhorado (AINDA NÃO RESOLVIDO)
+- [ ] Investigar por que as correções anteriores não funcionaram
+- [ ] Usar webdev_debug para análise profunda
