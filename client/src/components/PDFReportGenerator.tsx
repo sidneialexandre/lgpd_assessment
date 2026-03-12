@@ -23,24 +23,29 @@ export async function generatePDFReport(data: ReportData) {
   try {
     console.log('[PDF] Iniciando geracao de PDF', { companyName: data.companyName, assessmentNumber: data.assessmentNumber });
     
-    // Create container element
+    // Create container element with inline styles to avoid Tailwind CSS conflicts
     const container = document.createElement("div");
     container.innerHTML = generateHTMLContent(data);
     container.style.position = 'absolute';
     container.style.left = '-9999px';
     container.style.width = '210mm';
     container.style.padding = '20px';
-    container.style.backgroundColor = 'white';
+    container.style.backgroundColor = '#ffffff';
+    container.style.fontFamily = 'Arial, sans-serif';
+    container.style.color = '#333333';
+    container.style.lineHeight = '1.6';
     document.body.appendChild(container);
 
     console.log('[PDF] Convertendo HTML para canvas...');
     
-    // Convert HTML to canvas
+    // Convert HTML to canvas with allowTaint to handle external resources
     const canvas = await html2canvas(container, {
       scale: 2,
       useCORS: true,
+      allowTaint: true,
       logging: false,
       backgroundColor: '#ffffff',
+      windowHeight: container.scrollHeight,
     });
 
     console.log('[PDF] Canvas criado com sucesso');
@@ -102,7 +107,7 @@ function generateHTMLContent(data: ReportData): string {
           <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold; color: #1e3a8a;">
             ${group.groupName} - ${group.departmentName}
           </h4>
-          <p style="margin: 0; font-size: 12px; color: #666;">
+          <p style="margin: 0; font-size: 12px; color: #666666;">
             Respondentes: ${group.completedCount}/${group.respondentCount}
           </p>
         </div>
@@ -121,13 +126,13 @@ function generateHTMLContent(data: ReportData): string {
     .join("");
 
   return `
-    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+    <div style="font-family: Arial, sans-serif; color: #333333; line-height: 1.6;">
       <!-- Header -->
       <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #1e40af;">
         <h1 style="margin: 0 0 10px 0; font-size: 32px; color: #1e40af;">
           Avaliação de Conformidade LGPD
         </h1>
-        <p style="margin: 0; font-size: 14px; color: #666;">
+        <p style="margin: 0; font-size: 14px; color: #666666;">
           Lei Geral de Proteção de Dados - Lei nº 13.709/2018
         </p>
       </div>
@@ -138,19 +143,19 @@ function generateHTMLContent(data: ReportData): string {
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
             <td style="padding: 8px; font-weight: bold; width: 30%; color: #374151;">Empresa:</td>
-            <td style="padding: 8px; color: #666;">${data.companyName}</td>
+            <td style="padding: 8px; color: #666666;">${data.companyName}</td>
           </tr>
-          <tr style="background-color: #fff;">
+          <tr style="background-color: #ffffff;">
             <td style="padding: 8px; font-weight: bold; color: #374151;">Avaliação:</td>
-            <td style="padding: 8px; color: #666;">Avaliação ${data.assessmentNumber}</td>
+            <td style="padding: 8px; color: #666666;">Avaliação ${data.assessmentNumber}</td>
           </tr>
           <tr>
             <td style="padding: 8px; font-weight: bold; color: #374151;">Data do Relatório:</td>
-            <td style="padding: 8px; color: #666;">${formattedDate}</td>
+            <td style="padding: 8px; color: #666666;">${formattedDate}</td>
           </tr>
-          <tr style="background-color: #fff;">
+          <tr style="background-color: #ffffff;">
             <td style="padding: 8px; font-weight: bold; color: #374151;">Total de Respondentes:</td>
-            <td style="padding: 8px; color: #666;">${data.completedRespondents} de ${data.totalRespondents}</td>
+            <td style="padding: 8px; color: #666666;">${data.completedRespondents} de ${data.totalRespondents}</td>
           </tr>
         </table>
       </div>
@@ -171,21 +176,21 @@ function generateHTMLContent(data: ReportData): string {
       <!-- Pillar Information -->
       <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
         <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #1f2937;">Sobre a Avaliação</h2>
-        <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;">
+        <p style="margin: 0 0 10px 0; font-size: 12px; color: #666666;">
           Esta avaliação é composta por 50 questões divididas em 3 pilares estratégicos:
         </p>
-        <ul style="margin: 10px 0; padding-left: 20px; font-size: 12px; color: #666;">
+        <ul style="margin: 10px 0; padding-left: 20px; font-size: 12px; color: #666666;">
           <li><strong style="color: #1e40af;">Segurança da Informação:</strong> 15 questões sobre proteção de dados e segurança</li>
           <li><strong style="color: #16a34a;">Conformidade Documental:</strong> 15 questões sobre documentação e políticas</li>
           <li><strong style="color: #7c3aed;">Cultura de Privacidade:</strong> 20 questões sobre conscientização e cultura organizacional</li>
         </ul>
-        <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+        <p style="margin: 10px 0 0 0; font-size: 12px; color: #666666;">
           Cada resposta é pontuada de 0 a 100 pontos, totalizando um máximo de 10.000 pontos.
         </p>
       </div>
 
       <!-- Footer -->
-      <div style="border-top: 1px solid #e5e7eb; padding-top: 15px; text-align: center; font-size: 11px; color: #999;">
+      <div style="border-top: 1px solid #e5e7eb; padding-top: 15px; text-align: center; font-size: 11px; color: #999999;">
         <p style="margin: 0;">Relatório gerado automaticamente pelo sistema de Avaliação de Conformidade LGPD</p>
         <p style="margin: 5px 0 0 0;">© 2026 - Todos os direitos reservados</p>
       </div>

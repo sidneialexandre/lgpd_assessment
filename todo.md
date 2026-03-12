@@ -785,3 +785,12 @@ A correção foi implementada no commit anterior (e01e3ef):
 - [x] Criados 28 novos testes de PDF generation fix
 - [x] Todos os 163 testes passando
 - [x] Build TypeScript sem erros
+
+
+## Bug Corrigido - Sessão 15
+
+- [x] Erro: "Attempting to parse an unsupported color function oklch" ao gerar PDF (CORRIGIDO)
+- [x] Convertidas todas as cores de oklch para hexadecimal
+- [x] Adicionadas opções allowTaint e windowHeight no html2canvas
+- [x] Todos os 163 testes passando
+- [x] Build TypeScript sem erros
