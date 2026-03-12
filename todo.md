@@ -794,3 +794,22 @@ A correção foi implementada no commit anterior (e01e3ef):
 - [x] Adicionadas opções allowTaint e windowHeight no html2canvas
 - [x] Todos os 163 testes passando
 - [x] Build TypeScript sem erros
+
+
+## Bugs Críticos - Sessão 16
+
+- [ ] Erro oklch ao gerar PDF continua ocorrendo
+- [ ] Links dos respondentes no painel admin não estão funcionando
+- [ ] Layout do painel admin foi mudado e quebrou a geração de links
+- [ ] Restaurar layout antigo que estava funcional
+- [ ] Verificar se CSS Tailwind está sendo aplicado ao container do PDF
+
+
+## Bugs Corrigidos - Sessão 16
+
+- [x] Erro oklch ao gerar PDF (CORRIGIDO - removido completamente CSS Tailwind do container)
+- [x] Links dos respondentes não funcionando (CORRIGIDO - adicionados imports em RespondentAccess.tsx)
+- [x] RespondentAccess.tsx faltava imports de useState e useEffect (CORRIGIDO)
+- [x] PDFReportGenerator reescrito com APENAS inline styles (sem classes Tailwind)
+- [x] Todos os 163 testes passando
+- [x] Build TypeScript sem erros
