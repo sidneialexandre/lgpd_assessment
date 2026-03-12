@@ -1,5 +1,4 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 export interface ReportData {
   companyName: string;
@@ -23,257 +22,136 @@ export async function generatePDFReport(data: ReportData) {
   try {
     console.log('[PDF] Iniciando geracao de PDF', { companyName: data.companyName, assessmentNumber: data.assessmentNumber });
     
-    // Create HTML content with COMPLETE CSS reset
-    const htmlContent = generateHTMLContent(data);
-    
-    // Create an iframe with isolated CSS
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.style.position = 'absolute';
-    iframe.style.width = '210mm';
-    iframe.style.height = '297mm';
-    
-    document.body.appendChild(iframe);
-    
-    // Write content to iframe
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!iframeDoc) {
-      throw new Error('Não foi possível acessar o documento do iframe');
-    }
-    
-    // Write HTML with complete CSS reset
-    iframeDoc.open();
-    iframeDoc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-              border: 0;
-              background: transparent;
-              color: inherit;
-              font-size: inherit;
-              font-weight: inherit;
-              line-height: inherit;
-              text-decoration: none;
-            }
-            
-            html, body {
-              width: 100%;
-              height: 100%;
-              background-color: #ffffff;
-              color: #333333;
-              font-family: Arial, sans-serif;
-              font-size: 12px;
-              line-height: 1.6;
-            }
-            
-            body {
-              padding: 20px;
-            }
-            
-            h1 {
-              font-size: 28px;
-              font-weight: bold;
-              margin-bottom: 10px;
-              color: #1e40af;
-            }
-            
-            h2 {
-              font-size: 16px;
-              font-weight: bold;
-              margin-bottom: 12px;
-              color: #1f2937;
-            }
-            
-            h4 {
-              font-size: 14px;
-              font-weight: bold;
-              margin-bottom: 5px;
-              color: #1e40af;
-            }
-            
-            p {
-              margin-bottom: 8px;
-              color: #333333;
-            }
-            
-            ul {
-              margin-left: 20px;
-              margin-bottom: 8px;
-            }
-            
-            li {
-              margin-bottom: 4px;
-              color: #666666;
-            }
-            
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              font-size: 11px;
-            }
-            
-            td {
-              padding: 6px;
-              color: #333333;
-            }
-            
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-              padding-bottom: 20px;
-              border-bottom: 3px solid #1e40af;
-            }
-            
-            .company-info {
-              background-color: #f3f4f6;
-              padding: 15px;
-              border-radius: 8px;
-              margin-bottom: 20px;
-            }
-            
-            .compliance-box {
-              background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-              color: white;
-              padding: 25px;
-              border-radius: 8px;
-              margin-bottom: 20px;
-              text-align: center;
-            }
-            
-            .compliance-box p {
-              color: white;
-            }
-            
-            .compliance-value {
-              font-size: 40px;
-              font-weight: bold;
-              margin: 0;
-            }
-            
-            .group-result {
-              margin-bottom: 20px;
-              border: 1px solid #ddd;
-              padding: 15px;
-              border-radius: 4px;
-              page-break-inside: avoid;
-            }
-            
-            .progress-bar {
-              width: 100%;
-              height: 8px;
-              background-color: #e5e7eb;
-              border-radius: 4px;
-              overflow: hidden;
-              margin-top: 8px;
-            }
-            
-            .progress-fill {
-              height: 100%;
-              background-color: #3b82f6;
-              border-radius: 4px;
-            }
-            
-            .info-section {
-              background-color: #f9fafb;
-              padding: 15px;
-              border-radius: 8px;
-              margin-bottom: 20px;
-              font-size: 11px;
-            }
-            
-            .footer {
-              border-top: 1px solid #e5e7eb;
-              padding-top: 12px;
-              text-align: center;
-              font-size: 10px;
-              color: #999999;
-              margin-top: 20px;
-            }
-            
-            .label {
-              font-weight: bold;
-              color: #374151;
-            }
-            
-            .text-muted {
-              color: #666666;
-            }
-            
-            .text-small {
-              font-size: 11px;
-            }
-            
-            .text-xs {
-              font-size: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          ${htmlContent}
-        </body>
-      </html>
-    `);
-    iframeDoc.close();
-    
-    // Wait for iframe to render
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    console.log('[PDF] Convertendo iframe para canvas...');
-    
-    // Convert iframe to canvas
-    const canvas = await html2canvas(iframeDoc.body, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      windowHeight: iframeDoc.body.scrollHeight,
-      windowWidth: 800,
-    });
-    
-    console.log('[PDF] Canvas criado com sucesso');
-    
-    // Create PDF
+    // Create PDF directly without html2canvas to avoid gradient issues
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
     });
     
-    const imgData = canvas.toDataURL('image/png');
-    const imgWidth = 210; // A4 width in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let yPosition = 20;
     
-    let heightLeft = imgHeight;
-    let position = 0;
+    // Helper function to add text with word wrapping
+    const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number, isBold: boolean = false): number => {
+      pdf.setFontSize(fontSize);
+      if (isBold) {
+        (pdf as any).setFont(undefined, 'bold');
+      } else {
+        (pdf as any).setFont(undefined, 'normal');
+      }
+      const lines = pdf.splitTextToSize(text, maxWidth);
+      pdf.text(lines, x, y);
+      return y + (lines.length * fontSize * 0.35);
+    };
     
-    // Add image to PDF (handling multiple pages if needed)
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= 297; // A4 height in mm
+    // Header
+    pdf.setFillColor(30, 64, 175); // #1e40af
+    pdf.rect(10, yPosition - 5, pageWidth - 20, 25, 'F');
+    pdf.setTextColor(255, 255, 255);
+    yPosition = addWrappedText('Avaliação de Conformidade LGPD', 15, yPosition + 5, pageWidth - 30, 18, true);
+    pdf.setTextColor(200, 200, 200);
+    yPosition = addWrappedText('Lei Geral de Proteção de Dados - Lei nº 13.709/2018', 15, yPosition + 2, pageWidth - 30, 10);
+    yPosition += 15;
     
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= 297;
+    // Company Info
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFillColor(243, 244, 246); // #f3f4f6
+    pdf.rect(10, yPosition - 2, pageWidth - 20, 40, 'F');
+    yPosition = addWrappedText('Informações da Empresa', 15, yPosition + 3, pageWidth - 30, 12, true);
+    yPosition = addWrappedText(`Empresa: ${data.companyName}`, 15, yPosition + 2, pageWidth - 30, 10);
+    yPosition = addWrappedText(`Avaliação: Avaliação ${data.assessmentNumber}`, 15, yPosition + 2, pageWidth - 30, 10);
+    yPosition = addWrappedText(`Total de Respondentes: ${data.completedRespondents} de ${data.totalRespondents}`, 15, yPosition + 2, pageWidth - 30, 10);
+    yPosition += 10;
+    
+    // Compliance Box
+    pdf.setFillColor(30, 64, 175); // #1e40af
+    pdf.rect(10, yPosition - 2, pageWidth - 20, 30, 'F');
+    pdf.setTextColor(255, 255, 255);
+    yPosition = addWrappedText('Conformidade Total', 15, yPosition + 3, pageWidth - 30, 11);
+    pdf.setFontSize(24);
+    (pdf as any).setFont(undefined, 'bold');
+    pdf.text(`${data.compliancePercentage}%`, pageWidth / 2, yPosition + 8, { align: 'center' });
+    pdf.setFontSize(10);
+    (pdf as any).setFont(undefined, 'normal');
+    yPosition = addWrappedText(`Pontuação Total: ${data.totalScore.toLocaleString()} / 10.000 pontos`, 15, yPosition + 12, pageWidth - 30, 10);
+    yPosition += 10;
+    
+    // Groups Compliance
+    pdf.setTextColor(0, 0, 0);
+    yPosition = addWrappedText('Conformidade por Grupo', 15, yPosition, pageWidth - 30, 12, true);
+    yPosition += 5;
+    
+    // Draw groups
+    for (const group of data.groups) {
+      // Check if we need a new page
+      if (yPosition > pageHeight - 30) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      
+      // Group header
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(10, yPosition - 2, pageWidth - 20, 8, 'F');
+      pdf.setFontSize(11);
+      (pdf as any).setFont(undefined, 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`${group.groupName} - ${group.departmentName}`, 15, yPosition + 3);
+      pdf.setFontSize(10);
+      (pdf as any).setFont(undefined, 'normal');
+      pdf.text(`${group.completedCount}/${group.respondentCount} respondentes`, pageWidth - 30, yPosition + 3, { align: 'right' });
+      yPosition += 10;
+      
+      // Compliance percentage
+      pdf.setFontSize(14);
+      (pdf as any).setFont(undefined, 'bold');
+      pdf.text(`${group.compliancePercentage || 0}%`, 15, yPosition + 3);
+      
+      // Progress bar
+      const barWidth = pageWidth - 50;
+      const barX = 15;
+      const barY = yPosition + 6;
+      const barHeight = 4;
+      
+      // Background bar
+      pdf.setFillColor(229, 231, 235); // #e5e7eb
+      pdf.rect(barX, barY, barWidth, barHeight, 'F');
+      
+      // Filled bar
+      const fillWidth = (barWidth * (group.compliancePercentage || 0)) / 100;
+      pdf.setFillColor(59, 130, 246); // #3b82f6
+      pdf.rect(barX, barY, fillWidth, barHeight, 'F');
+      
+      yPosition += 15;
     }
+    
+    // Info Section
+    yPosition += 5;
+    if (yPosition > pageHeight - 40) {
+      pdf.addPage();
+      yPosition = 20;
+    }
+    
+    pdf.setFillColor(249, 250, 251); // #f9fafb
+    pdf.rect(10, yPosition - 2, pageWidth - 20, 35, 'F');
+    pdf.setTextColor(0, 0, 0);
+    yPosition = addWrappedText('Sobre a Avaliação', 15, yPosition + 3, pageWidth - 30, 11, true);
+    yPosition = addWrappedText('Esta avaliação é composta por 50 questões divididas em 3 pilares estratégicos:', 15, yPosition + 2, pageWidth - 30, 10);
+    yPosition = addWrappedText('• Segurança da Informação: 15 questões sobre proteção de dados', 15, yPosition + 2, pageWidth - 30, 10);
+    yPosition = addWrappedText('• Conformidade Documental: 15 questões sobre documentação', 15, yPosition + 2, pageWidth - 30, 10);
+    yPosition = addWrappedText('• Cultura de Privacidade: 20 questões sobre conscientização', 15, yPosition + 2, pageWidth - 30, 10);
+    
+    // Footer
+    pdf.setTextColor(150, 150, 150);
+    pdf.setFontSize(9);
+    pdf.text('Relatório gerado automaticamente pelo sistema de Avaliação de Conformidade LGPD', pageWidth / 2, pageHeight - 10, { align: 'center' });
     
     // Save PDF
     const filename = `LGPD_Relatorio_${data.companyName.replace(/\s+/g, "_")}_${data.assessmentNumber}.pdf`;
     pdf.save(filename);
     
     console.log('[PDF] PDF gerado e salvo com sucesso:', filename);
-    
-    // Clean up
-    if (iframe.parentNode) {
-      iframe.parentNode.removeChild(iframe);
-    }
   } catch (error) {
     console.error('[PDF] Erro ao gerar PDF:', error);
     alert(`Erro ao gerar PDF: ${error instanceof Error ? error.message : String(error)}`);
