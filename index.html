@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliação de Conformidade LGPD - Redirecionando...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            text-align: center;
+            background: white;
+            padding: 60px 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #1f2937;
+            font-size: 28px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        
+        p {
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 12px 32px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .info {
+            background: #f3f4f6;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .info strong {
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📋</div>
+        <h1>Avaliação de Conformidade LGPD</h1>
+        <div class="subtitle">Lei Geral de Proteção de Dados</div>
+        
+        <div class="loader"></div>
+        
+        <p>Redirecionando para a aplicação...</p>
+        
+        <button class="button" onclick="redirectToApp()">
+            Clique aqui se não for redirecionado automaticamente
+        </button>
+        
+        <div class="info">
+            <strong>ℹ️ Informação:</strong><br>
+            Se você foi redirecionado para esta página, pode ser necessário configurar o GitHub Pages corretamente. Verifique as configurações do seu repositório.
+        </div>
+    </div>
+
+    <script>
+        // Detectar se está no GitHub Pages e redirecionar para a aplicação
+        function redirectToApp() {
+            const currentUrl = window.location.href;
+            const isGitHubPages = currentUrl.includes('github.io') || currentUrl.includes('github.com');
+            
+            // Extrair o nome do repositório se estiver no GitHub Pages
+            let appUrl = '/';
+            
+            if (isGitHubPages) {
+                // Formato: https://username.github.io/repository-name/
+                const pathParts = window.location.pathname.split('/').filter(p => p);
+                
+                if (pathParts.length > 0 && pathParts[0] !== 'index.html') {
+                    // Se há um repositório específico
+                    appUrl = '/' + pathParts[0] + '/';
+                } else {
+                    // Se é a página principal (username.github.io)
+                    appUrl = '/';
+                }
+            }
+            
+            // Redirecionar para a aplicação
+            window.location.href = appUrl;
+        }
+        
+        // Redirecionar automaticamente após 2 segundos
+        setTimeout(redirectToApp, 2000);
+        
+        // Também tentar redirecionar imediatamente se possível
+        document.addEventListener('DOMContentLoaded', function() {
+            // Se a página carregou completamente, redirecionar
+            const timer = setTimeout(redirectToApp, 1000);
+        });
+    </script>
+</body>
+</html>
