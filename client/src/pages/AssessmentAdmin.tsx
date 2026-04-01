@@ -8,6 +8,7 @@ import { Copy, Check, Trash2, Mail, FileText, Share2, ExternalLink } from "lucid
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { generatePDFReport } from "@/components/PDFReportGenerator";
+import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 
 export default function AssessmentAdmin() {
   const [location, setLocation] = useLocation();
@@ -426,6 +427,15 @@ export default function AssessmentAdmin() {
                               <Share2 className="w-3 h-3 mr-1" />
                               Compartilhar
                             </Button>
+                          </div>
+                          
+                          {/* QR Code */}
+                          <div className="mt-3 pt-3 border-t border-slate-200">
+                            <QRCodeDisplay
+                              url={`${window.location.origin}/respondent?token=${session.accessToken}`}
+                              respondentName={session.respondentName}
+                              respondentEmail={session.respondentEmail}
+                            />
                           </div>
                         </div>
                       </div>
