@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, Check, Trash2, Mail, FileText } from "lucide-react";
+import { Copy, Check, Trash2, Mail, FileText, Share2, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { generatePDFReport } from "@/components/PDFReportGenerator";
@@ -355,22 +355,80 @@ export default function AssessmentAdmin() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge className={session.isCompleted === 1 ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
-                        {session.isCompleted === 1 ? "Completo" : "Pendente"}
-                      </Badge>
-                      <span className="text-xs text-slate-500">Token: {session.accessToken?.substring(0, 8)}...</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleCopyToken(session.accessToken)}
-                      >
-                        {copiedToken === session.accessToken ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </Button>
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge className={session.isCompleted === 1 ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                          {session.isCompleted === 1 ? "✓ Completo" : "⏳ Pendente"}
+                        </Badge>
+                      </div>
+                      
+                      {/* Link do Respondente */}
+                      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <p className="text-xs font-semibold text-slate-600 mb-3">Link de Acesso do Respondente:</p>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-white p-2 rounded border border-slate-300 overflow-hidden">
+                              <p className="text-xs text-slate-700 truncate font-mono">
+                                {`${window.location.origin}/respondent?token=${session.accessToken}`}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const url = `${window.location.origin}/respondent?token=${session.accessToken}`;
+                                navigator.clipboard.writeText(url);
+                                setCopiedToken(session.accessToken);
+                                setTimeout(() => setCopiedToken(null), 2000);
+                              }}
+                              title="Copiar link completo"
+                            >
+                              {copiedToken === session.accessToken ? (
+                                <Check className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                const url = `${window.location.origin}/respondent?token=${session.accessToken}`;
+                                window.open(url, '_blank');
+                              }}
+                              title="Abrir link em nova aba"
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" />
+                              Abrir
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                const url = `${window.location.origin}/respondent?token=${session.accessToken}`;
+                                const text = `Acesse a avaliacao LGPD: ${url}`;
+                                if (navigator.share) {
+                                  navigator.share({
+                                    title: 'Avaliacao LGPD',
+                                    text: text,
+                                  });
+                                } else {
+                                  navigator.clipboard.writeText(text);
+                                  alert('Link copiado para compartilhamento!');
+                                }
+                              }}
+                              title="Compartilhar link"
+                            >
+                              <Share2 className="w-3 h-3 mr-1" />
+                              Compartilhar
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))
