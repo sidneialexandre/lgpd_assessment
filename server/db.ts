@@ -621,6 +621,46 @@ export async function getLastAssessmentWithGroups(companyId: number) {
   };
 }
 
+// Get suggested groups for a new assessment based on the last assessment
+export async function getSuggestedGroupsForCNPJ(cnpj: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    // Find the company by CNPJ
+    const companyResult = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.cnpj, cnpj))
+      .limit(1);
+
+    if (companyResult.length === 0) return null;
+
+    const company = companyResult[0];
+
+    // Get the last assessment with groups
+    const lastAssessmentData = await getLastAssessmentWithGroups(company.id);
+    
+    if (!lastAssessmentData || lastAssessmentData.groups.length === 0) {
+      return null;
+    }
+
+    // Return suggested groups in a format suitable for the frontend
+    return {
+      companyId: company.id,
+      suggestedGroups: lastAssessmentData.groups.map(g => ({
+        id: g.id,
+        groupName: g.groupName,
+        departmentName: g.departmentName,
+        respondentCount: g.respondentCount,
+      })),
+      lastAssessmentDate: lastAssessmentData.assessment.createdAt,
+    };
+  } catch (error) {
+    console.error('[Database] Error getting suggested groups:', error);
+    return null;
+  }
+}
 
 // Get respondent sessions with assessment and company details by email
 export async function getRespondentSessionsByEmail(email: string) {

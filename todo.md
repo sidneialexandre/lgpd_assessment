@@ -822,3 +822,49 @@ A correção foi implementada no commit anterior (e01e3ef):
 - [ ] Bug: Design do painel de administração não foi melhorado (AINDA NÃO RESOLVIDO)
 - [ ] Investigar por que as correções anteriores não funcionaram
 - [ ] Usar webdev_debug para análise profunda
+
+
+## Novas Funcionalidades Solicitadas (Em Progresso)
+
+- [ ] Sugestão de Grupos Recorrentes para CNPJs existentes
+  - [ ] Criar procedure para buscar última avaliação de um CNPJ
+  - [ ] Implementar sugestão automática de grupos na página de setup
+  - [ ] Adicionar botão "Usar configuração anterior"
+  - [ ] Testar com múltiplas avaliações
+
+- [ ] Dashboard de Progresso em Tempo Real
+  - [ ] Criar página ProgressDashboard com atualização automática
+  - [ ] Implementar WebSocket ou polling para atualizações em tempo real
+  - [ ] Adicionar notificações quando respondentes completam
+  - [ ] Mostrar gráfico de progresso com animações
+  - [ ] Exibir lista de respondentes com status (Pendente/Completo)
+
+- [ ] Comparativo de Avaliações
+  - [ ] Criar página ComparisonPage para comparar múltiplas avaliações
+  - [ ] Implementar seletor de avaliações para comparar
+  - [ ] Exibir resultados lado a lado
+  - [ ] Mostrar evolução de conformidade entre avaliações
+  - [ ] Gerar gráfico comparativo de pilares
+
+## Três Funcionalidades Implementadas (Sessão Atual)
+
+- [x] Sugestão de Grupos Recorrentes para CNPJs existentes
+  - [x] Função getSuggestedGroupsForCNPJ no backend
+  - [x] Procedure tRPC company.getSuggestedGroups
+  - [x] 7 testes criados e passando
+
+- [x] Dashboard de Progresso em Tempo Real
+  - [x] Componente ProgressDashboard com auto-refresh
+  - [x] Polling a cada 5 segundos
+  - [x] Estatísticas em tempo real
+  - [x] Lista de respondentes com status
+  - [x] Rota /progress-dashboard adicionada
+
+- [x] Comparativo de Avaliações
+  - [x] Componente ComparisonPage
+  - [x] Seletor de até 4 avaliações
+  - [x] Tabela comparativa
+  - [x] Cálculo de tendências e insights
+  - [x] Rota /comparison adicionada
+
+Total de Testes: 206 (15 novos testes para as funcionalidades)

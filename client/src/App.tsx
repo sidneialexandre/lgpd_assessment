@@ -15,6 +15,8 @@ import CompanyAssessmentsList from "./pages/CompanyAssessmentsList";
 import RespondentLinksGeneration from "./pages/RespondentLinksGeneration";
 import RespondentDashboard from "./pages/RespondentDashboard";
 import AssessmentResults from "./pages/AssessmentResults";
+import ProgressDashboard from "./pages/ProgressDashboard";
+import ComparisonPage from "./pages/ComparisonPage";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -151,6 +153,8 @@ function Router() {
       <Route path={"/assessment-admin"} component={() => <AdminRoute component={AssessmentAdmin} />} />
       <Route path={"/respondent-links"} component={() => <AdminRoute component={RespondentLinksGeneration} />} />
       <Route path={"/admin"} component={() => <AdminRoute component={AssessmentAdmin} />} />
+      <Route path={"/progress-dashboard"} component={() => <AdminRoute component={ProgressDashboard} />} />
+      <Route path={"/comparison"} component={() => <AdminRoute component={ComparisonPage} />} />
       <Route path={"/assessment-results"} component={() => <ProtectedRoute component={AssessmentResults} />} />
       
       {/* Error routes */}

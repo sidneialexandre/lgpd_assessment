@@ -17,6 +17,7 @@ import {
   getAssessmentById, 
   getCompanyAssessments,
   getLastAssessmentWithGroups,
+  getSuggestedGroupsForCNPJ,
   createRespondentSession,
   getRespondentSession,
   getAssessmentRespondentSessions,
@@ -115,6 +116,12 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await deleteCompany(input.companyId);
         return { success: true };
+      }),
+
+    getSuggestedGroups: protectedProcedure
+      .input(z.object({ cnpj: z.string() }))
+      .query(async ({ input }) => {
+        return await getSuggestedGroupsForCNPJ(input.cnpj);
       }),
   }),
 
