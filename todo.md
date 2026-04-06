@@ -882,3 +882,11 @@ Total de Testes: 206 (15 novos testes para as funcionalidades)
 - [x] Testes para validação de email e template
 - [x] Testes de integração modal-to-email
 - [x] 10 novos testes criados e passando
+
+
+## Bug Crítico - Email API Retorna 404 (CORRIGIDO)
+
+- [x] Erro ao enviar email: "Email API retornou status 404" - CORRIGIDO
+- [x] Verificar endpoint da Email API - Endpoint estava correto
+- [x] Validar variáveis de ambiente (BUILT_IN_FORGE_API_URL, BUILT_IN_FORGE_API_KEY) - Adicionada validação
+- [x] Corrigir chamada à Email API no SendEmailModal - Adicionado melhor tratamento de erro e logging
