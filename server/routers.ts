@@ -552,6 +552,51 @@ export const appRouter = router({
           details: emailResults,
         };
       }),
+
+    sendEmailToRespondent: protectedProcedure
+      .input(z.object({
+        respondentEmail: z.string().email(),
+        respondentName: z.string().min(1),
+        respondentLink: z.string().url(),
+        message: z.string().min(1),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const response = await fetch(process.env.BUILT_IN_FORGE_API_URL + '/email/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: input.respondentEmail,
+              subject: 'Avaliação de Conformidade LGPD - Ação Necessária',
+              html: `
+                <h2>Avaliação de Conformidade LGPD</h2>
+                <p>${input.message.replace(/\n/g, '<br>')}</p>
+                <p style="margin-top: 20px; font-size: 12px; color: #666;">
+                  <strong>Departamento de Proteção de Dados</strong>
+                </p>
+              `,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Email API retornou status ${response.status}`);
+          }
+
+          const result = await response.json();
+          return {
+            success: true,
+            message: `Email enviado com sucesso para ${input.respondentEmail}`,
+            email: input.respondentEmail,
+            name: input.respondentName,
+          };
+        } catch (error) {
+          console.error('[RESPONDENT] Erro ao enviar email:', error);
+          throw new Error(`Falha ao enviar email: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+        }
+      }),
   }),
 
 });

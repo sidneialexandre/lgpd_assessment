@@ -868,3 +868,17 @@ A correção foi implementada no commit anterior (e01e3ef):
   - [x] Rota /comparison adicionada
 
 Total de Testes: 206 (15 novos testes para as funcionalidades)
+
+
+## Funcionalidade de Envio de Email - Nova Sessão
+
+- [x] Criar componente SendEmailModal para enviar emails personalizados
+- [x] Implementar procedure tRPC `respondent.sendEmailToRespondent`
+- [x] Integrar modal no painel de administração (AssessmentAdmin.tsx)
+- [x] Adicionar botão "Enviar Email" para cada respondente
+- [x] Implementar template de mensagem personalizado com nome do respondente
+- [x] Validação de email no modal
+- [x] Pré-visualização da mensagem no modal
+- [x] Testes para validação de email e template
+- [x] Testes de integração modal-to-email
+- [x] 10 novos testes criados e passando

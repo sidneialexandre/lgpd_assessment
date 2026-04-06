@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { generatePDFReport } from "@/components/PDFReportGenerator";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
+import { SendEmailModal } from "@/components/SendEmailModal";
 
 export default function AssessmentAdmin() {
   const [location, setLocation] = useLocation();
@@ -20,6 +21,8 @@ export default function AssessmentAdmin() {
   const [editingEmail, setEditingEmail] = useState("");
   const [allEmailsFilled, setAllEmailsFilled] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedRespondent, setSelectedRespondent] = useState<{ id: number; name: string; email: string; link: string } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -427,6 +430,25 @@ export default function AssessmentAdmin() {
                               <Share2 className="w-3 h-3 mr-1" />
                               Compartilhar
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 bg-blue-50 hover:bg-blue-100 border-blue-200"
+                              onClick={() => {
+                                const url = `${window.location.origin}/respondent?token=${session.accessToken}`;
+                                setSelectedRespondent({
+                                  id: session.id,
+                                  name: session.respondentName || '',
+                                  email: session.respondentEmail || '',
+                                  link: url,
+                                });
+                                setShowEmailModal(true);
+                              }}
+                              title="Enviar email com link"
+                            >
+                              <Mail className="w-3 h-3 mr-1" />
+                              Enviar Email
+                            </Button>
                           </div>
                           
                           {/* QR Code */}
@@ -588,6 +610,23 @@ export default function AssessmentAdmin() {
             )}
           </CardContent>
         </Card>
+
+        {/* Send Email Modal */}
+        {selectedRespondent && (
+          <SendEmailModal
+            isOpen={showEmailModal}
+            onClose={() => {
+              setShowEmailModal(false);
+              setSelectedRespondent(null);
+            }}
+            respondentName={selectedRespondent.name}
+            respondentEmail={selectedRespondent.email}
+            respondentLink={selectedRespondent.link}
+            onSuccess={() => {
+              getSessionsWithGroupsQuery.refetch();
+            }}
+          />
+        )}
       </div>
     </div>
   );
