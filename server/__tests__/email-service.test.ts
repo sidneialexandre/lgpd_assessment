@@ -25,7 +25,7 @@ describe("Email Service", () => {
 
       expect(result.success).toBe(true);
       expect(result.messageId).toBe("msg-123");
-      expect(mockCallDataApi).toHaveBeenCalledWith("email_api", {
+      expect(mockCallDataApi).toHaveBeenCalledWith("Email/send", {
         body: {
           to: "test@example.com",
           subject: "Test Subject",
@@ -74,7 +74,7 @@ describe("Email Service", () => {
         replyTo: "reply@example.com",
       });
 
-      expect(mockCallDataApi).toHaveBeenCalledWith("email_api", {
+      expect(mockCallDataApi).toHaveBeenCalledWith("Email/send", {
         body: {
           to: "test@example.com",
           subject: "Test",

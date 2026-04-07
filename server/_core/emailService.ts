@@ -15,7 +15,7 @@ export interface EmailResult {
 }
 
 /**
- * Envia um email usando a Manus email_api
+ * Envia um email usando a Manus Email/send API
  * @param options Opções do email
  * @returns Resultado do envio
  */
@@ -29,7 +29,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       throw new Error(`Email inválido: ${options.to}`);
     }
 
-    // Preparar payload para a email_api
+    // Preparar payload para a Email/send API
     const payload = {
       to: options.to,
       subject: options.subject,
@@ -40,12 +40,12 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
     console.log("[EMAIL SERVICE] Payload preparado:", JSON.stringify(payload, null, 2));
 
-    // Chamar email_api do Manus
-    const result = await callDataApi("email_api", {
+    // Chamar Email/send API do Manus (apiId correto encontrado: "Email/send")
+    const result = await callDataApi("Email/send", {
       body: payload,
     });
 
-    console.log("[EMAIL SERVICE] Resposta da email_api:", JSON.stringify(result, null, 2));
+    console.log("[EMAIL SERVICE] Resposta da Email/send API:", JSON.stringify(result, null, 2));
 
     // Verificar se o envio foi bem-sucedido
     if (result && typeof result === "object") {

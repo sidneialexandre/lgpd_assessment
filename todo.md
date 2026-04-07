@@ -899,3 +899,12 @@ Total de Testes: 206 (15 novos testes para as funcionalidades)
 - [x] Testar diferentes caminhos - Usada função sendEmail do emailService.ts
 - [x] Usar callDataApi ao invés de fetch direto - Implementado
 - [x] Validar resposta da API - Testes passando
+
+
+## Bug - Data API Email Request Failed 404 (CORRIGIDO)
+
+- [x] Erro: "Data API request failed (404 Not Found): api not found" - CORRIGIDO
+- [x] apiId "email_api" não existe na Data API do Manus - Encontrado: "Email/send"
+- [x] Investigar apiId correto para envio de email - Testados 6 apiIds diferentes
+- [x] Testar diferentes apiIds - "Email/send" é o correto
+- [x] Implementar solução com apiId correto - Implementado e testado com sucesso
