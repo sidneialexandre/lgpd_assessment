@@ -890,3 +890,12 @@ Total de Testes: 206 (15 novos testes para as funcionalidades)
 - [x] Verificar endpoint da Email API - Endpoint estava correto
 - [x] Validar variáveis de ambiente (BUILT_IN_FORGE_API_URL, BUILT_IN_FORGE_API_KEY) - Adicionada validação
 - [x] Corrigir chamada à Email API no SendEmailModal - Adicionado melhor tratamento de erro e logging
+
+
+## Bug - Email API Retorna 404 (CORRIGIDO)
+
+- [x] Erro: "404 page not found" ao clicar em "Enviar Email" - CORRIGIDO
+- [x] Investigar endpoint correto da Email API do Manus - Encontrado: callDataApi("email_api")
+- [x] Testar diferentes caminhos - Usada função sendEmail do emailService.ts
+- [x] Usar callDataApi ao invés de fetch direto - Implementado
+- [x] Validar resposta da API - Testes passando

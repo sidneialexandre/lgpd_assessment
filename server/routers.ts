@@ -564,43 +564,17 @@ export const appRouter = router({
         try {
           console.log('[RESPONDENT] Iniciando envio de email para:', input.respondentEmail);
           
-          if (!process.env.BUILT_IN_FORGE_API_URL) {
-            throw new Error('BUILT_IN_FORGE_API_URL não está configurada');
-          }
-          if (!process.env.BUILT_IN_FORGE_API_KEY) {
-            throw new Error('BUILT_IN_FORGE_API_KEY não está configurada');
-          }
-
-          const baseUrl = process.env.BUILT_IN_FORGE_API_URL.endsWith('/') 
-            ? process.env.BUILT_IN_FORGE_API_URL 
-            : process.env.BUILT_IN_FORGE_API_URL + '/';
-          const emailEndpoint = baseUrl + 'email/send';
-          
-          console.log('[RESPONDENT] Chamando endpoint:', emailEndpoint);
-
-          const response = await fetch(emailEndpoint, {
-            method: 'POST',
-            headers: {
-              'Authorization': 'Bearer ' + process.env.BUILT_IN_FORGE_API_KEY,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              to: input.respondentEmail,
-              subject: 'Avaliação de Conformidade LGPD - Ação Necessária',
-              html: '<h2>Avaliação de Conformidade LGPD</h2><p>' + input.message.replace(/\n/g, '<br>') + '</p><p style="margin-top: 20px; font-size: 12px; color: #666;"><strong>Departamento de Proteção de Dados</strong></p>',
-            }),
+          const result = await sendEmail({
+            to: input.respondentEmail,
+            subject: 'Avaliação de Conformidade LGPD - Ação Necessária',
+            html: '<h2>Avaliação de Conformidade LGPD</h2><p>' + input.message.replace(/\n/g, '<br>') + '</p><p style="margin-top: 20px; font-size: 12px; color: #666;"><strong>Departamento de Proteção de Dados</strong></p>',
           });
 
-          console.log('[RESPONDENT] Resposta do servidor:', response.status, response.statusText);
-
-          if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Sem detalhes');
-            console.error('[RESPONDENT] Erro na resposta:', errorText);
-            throw new Error('Email API retornou status ' + response.status + ': ' + errorText);
+          if (!result.success) {
+            throw new Error(result.error || 'Erro desconhecido ao enviar email');
           }
-
-          const result = await response.json();
-          console.log('[RESPONDENT] Email enviado com sucesso:', result);
+          
+          console.log('[RESPONDENT] Email enviado com sucesso para:', input.respondentEmail);
           
           return {
             success: true,
