@@ -908,3 +908,12 @@ Total de Testes: 206 (15 novos testes para as funcionalidades)
 - [x] Investigar apiId correto para envio de email - Testados 6 apiIds diferentes
 - [x] Testar diferentes apiIds - "Email/send" é o correto
 - [x] Implementar solução com apiId correto - Implementado e testado com sucesso
+
+
+## Bug - Email API Continua Retornando 404 em Produção
+
+- [ ] Erro: "Data API request failed (404 Not Found): api not found" persiste
+- [ ] callDataApi("Email/send") não funciona em produção
+- [ ] Investigar como chamar Email API via BUILT_IN_FORGE_API_URL diretamente
+- [ ] Testar novo método de envio de email
+- [ ] Validar funcionamento em produção

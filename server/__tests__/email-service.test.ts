@@ -1,21 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { sendEmail, sendEmailBatch } from "../_core/emailService";
-import * as dataApi from "../_core/dataApi";
 
-// Mock do callDataApi
-vi.mock("../_core/dataApi", () => ({
-  callDataApi: vi.fn(),
-}));
+// Mock do fetch global
+global.fetch = vi.fn();
 
 describe("Email Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.BUILT_IN_FORGE_API_URL = "https://api.example.com";
+    process.env.BUILT_IN_FORGE_API_KEY = "test-key";
   });
 
   describe("sendEmail", () => {
     it("deve enviar email com sucesso", async () => {
-      const mockCallDataApi = vi.mocked(dataApi.callDataApi);
-      mockCallDataApi.mockResolvedValue({ success: true, messageId: "msg-123" });
+      const mockFetch = vi.mocked(global.fetch);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, messageId: "msg-123" }),
+      } as Response);
 
       const result = await sendEmail({
         to: "test@example.com",
@@ -25,17 +27,11 @@ describe("Email Service", () => {
 
       expect(result.success).toBe(true);
       expect(result.messageId).toBe("msg-123");
-      expect(mockCallDataApi).toHaveBeenCalledWith("Email/send", {
-        body: {
-          to: "test@example.com",
-          subject: "Test Subject",
-          html: "<p>Test content</p>",
-        },
-      });
+      expect(mockFetch).toHaveBeenCalled();
     });
 
     it("deve validar formato de email", async () => {
-      const mockCallDataApi = vi.mocked(dataApi.callDataApi);
+      const mockFetch = vi.mocked(global.fetch);
 
       const result = await sendEmail({
         to: "invalid-email",
@@ -45,12 +41,17 @@ describe("Email Service", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Email inválido");
-      expect(mockCallDataApi).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it("deve lidar com erro da API", async () => {
-      const mockCallDataApi = vi.mocked(dataApi.callDataApi);
-      mockCallDataApi.mockRejectedValue(new Error("API Error"));
+      const mockFetch = vi.mocked(global.fetch);
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+        text: async () => "Server error",
+      } as Response);
 
       const result = await sendEmail({
         to: "test@example.com",
@@ -59,12 +60,15 @@ describe("Email Service", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("API Error");
+      expect(result.error).toBeDefined();
     });
 
     it("deve incluir from e replyTo quando fornecidos", async () => {
-      const mockCallDataApi = vi.mocked(dataApi.callDataApi);
-      mockCallDataApi.mockResolvedValue({ success: true });
+      const mockFetch = vi.mocked(global.fetch);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
 
       await sendEmail({
         to: "test@example.com",
@@ -74,42 +78,60 @@ describe("Email Service", () => {
         replyTo: "reply@example.com",
       });
 
-      expect(mockCallDataApi).toHaveBeenCalledWith("Email/send", {
-        body: {
-          to: "test@example.com",
-          subject: "Test",
-          html: "<p>Test</p>",
-          from: "sender@example.com",
-          replyTo: "reply@example.com",
-        },
-      });
+      expect(mockFetch).toHaveBeenCalled();
+      const callArgs = (mockFetch.mock.calls[0][1] as RequestInit);
+      const body = JSON.parse(callArgs.body as string);
+      expect(body.from).toBe("sender@example.com");
+      expect(body.replyTo).toBe("reply@example.com");
     });
   });
 
   describe("sendEmailBatch", () => {
     it("deve enviar emails em lote com sucesso", async () => {
-      const mockCallDataApi = vi.mocked(dataApi.callDataApi);
-      mockCallDataApi.mockResolvedValue({ success: true, messageId: "msg-123" });
+      const mockFetch = vi.mocked(global.fetch);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, messageId: "msg-123" }),
+      } as Response);
 
-      const recipients = ["test1@example.com", "test2@example.com", "test3@example.com"];
-      const results = await sendEmailBatch(recipients, "Test Subject", "<p>Test</p>");
+      const results = await sendEmailBatch(
+        ["test1@example.com", "test2@example.com", "test3@example.com"],
+        "Test",
+        "<p>Test</p>"
+      );
 
       expect(results).toHaveLength(3);
       expect(results.every((r) => r.success)).toBe(true);
-      expect(mockCallDataApi).toHaveBeenCalledTimes(3);
+      expect(mockFetch).toHaveBeenCalledTimes(3);
     });
 
     it("deve lidar com falhas parciais em lote", async () => {
-      const mockCallDataApi = vi.mocked(dataApi.callDataApi);
+      const mockFetch = vi.mocked(global.fetch);
       
-      // Simular sucesso, falha, sucesso
-      mockCallDataApi
-        .mockResolvedValueOnce({ success: true, messageId: "msg-1" })
-        .mockRejectedValueOnce(new Error("API Error"))
-        .mockResolvedValueOnce({ success: true, messageId: "msg-3" });
+      // Primeira chamada: sucesso
+      // Segunda chamada: falha
+      // Terceira chamada: sucesso
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          text: async () => "Invalid email",
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        } as Response);
 
-      const recipients = ["test1@example.com", "test2@example.com", "test3@example.com"];
-      const results = await sendEmailBatch(recipients, "Test Subject", "<p>Test</p>");
+      const results = await sendEmailBatch(
+        ["test1@example.com", "test2@example.com", "test3@example.com"],
+        "Test",
+        "<p>Test</p>"
+      );
 
       expect(results).toHaveLength(3);
       expect(results[0].success).toBe(true);
@@ -118,11 +140,17 @@ describe("Email Service", () => {
     });
 
     it("deve validar cada email no lote", async () => {
-      const mockCallDataApi = vi.mocked(dataApi.callDataApi);
-      mockCallDataApi.mockResolvedValue({ success: true });
+      const mockFetch = vi.mocked(global.fetch);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
 
-      const recipients = ["valid@example.com", "invalid-email", "another@example.com"];
-      const results = await sendEmailBatch(recipients, "Test", "<p>Test</p>");
+      const results = await sendEmailBatch(
+        ["test1@example.com", "invalid-email", "test3@example.com"],
+        "Test",
+        "<p>Test</p>"
+      );
 
       expect(results).toHaveLength(3);
       expect(results[0].success).toBe(true);

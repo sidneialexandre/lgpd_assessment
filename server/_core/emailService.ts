@@ -1,4 +1,4 @@
-import { callDataApi } from "./dataApi";
+import { ENV } from "./env";
 
 export interface EmailOptions {
   to: string;
@@ -15,7 +15,7 @@ export interface EmailResult {
 }
 
 /**
- * Envia um email usando a Manus Email/send API
+ * Envia um email usando a Manus Email API diretamente
  * @param options Opções do email
  * @returns Resultado do envio
  */
@@ -29,7 +29,15 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       throw new Error(`Email inválido: ${options.to}`);
     }
 
-    // Preparar payload para a Email/send API
+    // Validar configuração
+    if (!ENV.forgeApiUrl) {
+      throw new Error("BUILT_IN_FORGE_API_URL não está configurado");
+    }
+    if (!ENV.forgeApiKey) {
+      throw new Error("BUILT_IN_FORGE_API_KEY não está configurado");
+    }
+
+    // Preparar payload para a Email API
     const payload = {
       to: options.to,
       subject: options.subject,
@@ -40,22 +48,40 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
     console.log("[EMAIL SERVICE] Payload preparado:", JSON.stringify(payload, null, 2));
 
-    // Chamar Email/send API do Manus (apiId correto encontrado: "Email/send")
-    const result = await callDataApi("Email/send", {
-      body: payload,
+    // Construir URL da Email API
+    const baseUrl = ENV.forgeApiUrl.endsWith("/") ? ENV.forgeApiUrl : `${ENV.forgeApiUrl}/`;
+    
+    // Usar apenas o endpoint correto da Manus Email API
+    const url = new URL("Email/send", baseUrl).toString();
+    console.log("[EMAIL SERVICE] Enviando para endpoint:", url);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ENV.forgeApiKey}`,
+      },
+      body: JSON.stringify(payload),
     });
 
-    console.log("[EMAIL SERVICE] Resposta da Email/send API:", JSON.stringify(result, null, 2));
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log("[EMAIL SERVICE] Falha - Status:", response.status, "- Erro:", errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log("[EMAIL SERVICE] Resposta:", JSON.stringify(result, null, 2));
 
     // Verificar se o envio foi bem-sucedido
     if (result && typeof result === "object") {
       const resultObj = result as Record<string, unknown>;
       
-      if (resultObj.success === true || resultObj.messageId) {
+      if (resultObj.success === true || resultObj.messageId || resultObj.id) {
         console.log("[EMAIL SERVICE] Email enviado com sucesso para:", options.to);
         return {
           success: true,
-          messageId: resultObj.messageId as string | undefined,
+          messageId: (resultObj.messageId || resultObj.id) as string | undefined,
         };
       }
       
@@ -64,7 +90,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       }
     }
 
-    // Se chegou aqui, considerar como sucesso (a API pode não retornar success explicitamente)
+    // Se chegou aqui, considerar como sucesso
     console.log("[EMAIL SERVICE] Email enviado (resposta ambígua) para:", options.to);
     return {
       success: true,
