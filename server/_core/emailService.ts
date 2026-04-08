@@ -1,4 +1,5 @@
 import { ENV } from "./env";
+import { callDataApi } from "./dataApi";
 
 export interface EmailOptions {
   to: string;
@@ -15,7 +16,7 @@ export interface EmailResult {
 }
 
 /**
- * Envia um email usando a Manus Email API diretamente
+ * Envia um email usando a Manus Email API via Data API
  * @param options Opções do email
  * @returns Resultado do envio
  */
@@ -48,30 +49,14 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
     console.log("[EMAIL SERVICE] Payload preparado:", JSON.stringify(payload, null, 2));
 
-    // Construir URL da Email API
-    const baseUrl = ENV.forgeApiUrl.endsWith("/") ? ENV.forgeApiUrl : `${ENV.forgeApiUrl}/`;
+    // Usar callDataApi para enviar email
+    console.log("[EMAIL SERVICE] Chamando Email/send via Data API");
     
-    // Usar apenas o endpoint correto da Manus Email API
-    const url = new URL("Email/send", baseUrl).toString();
-    console.log("[EMAIL SERVICE] Enviando para endpoint:", url);
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${ENV.forgeApiKey}`,
-      },
-      body: JSON.stringify(payload),
+    const result = await callDataApi("Email/send", {
+      body: payload,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log("[EMAIL SERVICE] Falha - Status:", response.status, "- Erro:", errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log("[EMAIL SERVICE] Resposta:", JSON.stringify(result, null, 2));
+    console.log("[EMAIL SERVICE] Resposta da API:", JSON.stringify(result, null, 2));
 
     // Verificar se o envio foi bem-sucedido
     if (result && typeof result === "object") {
