@@ -50,9 +50,9 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     console.log("[EMAIL SERVICE] Payload preparado:", JSON.stringify(payload, null, 2));
 
     // Usar callDataApi para enviar email
-    console.log("[EMAIL SERVICE] Chamando Email/send via Data API");
+    console.log("[EMAIL SERVICE] Chamando email_api via Data API");
     
-    const result = await callDataApi("Email/send", {
+    const result = await callDataApi("email_api", {
       body: payload,
     });
 
