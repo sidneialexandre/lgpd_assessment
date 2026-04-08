@@ -1,5 +1,5 @@
 import { ENV } from "./env";
-import { callDataApi } from "./dataApi";
+import { TRPCError } from "@trpc/server";
 
 export interface EmailOptions {
   to: string;
@@ -16,14 +16,22 @@ export interface EmailResult {
 }
 
 /**
- * Envia um email usando a Manus Email API via Data API
+ * Constrói a URL do endpoint de email usando o padrão WebDevService
+ */
+const buildEmailEndpointUrl = (baseUrl: string): string => {
+  const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return new URL("webdevtoken.v1.WebDevService/SendEmail", normalizedBase).toString();
+};
+
+/**
+ * Envia um email usando a Manus Email Service via WebDevService
  * @param options Opções do email
  * @returns Resultado do envio
  */
 export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   try {
     console.log("[EMAIL SERVICE] Iniciando envio de email para:", options.to);
-    
+
     // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(options.to)) {
@@ -38,7 +46,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       throw new Error("BUILT_IN_FORGE_API_KEY não está configurado");
     }
 
-    // Preparar payload para a Email API
+    // Preparar payload para a Email Service
     const payload = {
       to: options.to,
       subject: options.subject,
@@ -49,19 +57,40 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
     console.log("[EMAIL SERVICE] Payload preparado:", JSON.stringify(payload, null, 2));
 
-    // Usar callDataApi para enviar email
-    console.log("[EMAIL SERVICE] Chamando email_api via Data API");
-    
-    const result = await callDataApi("email_api", {
-      body: payload,
+    // Chamar endpoint de email via WebDevService
+    const endpoint = buildEmailEndpointUrl(ENV.forgeApiUrl);
+    console.log("[EMAIL SERVICE] Chamando endpoint:", endpoint);
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        authorization: `Bearer ${ENV.forgeApiKey}`,
+        "content-type": "application/json",
+        "connect-protocol-version": "1",
+      },
+      body: JSON.stringify(payload),
     });
 
+    console.log("[EMAIL SERVICE] Status da resposta:", response.status, response.statusText);
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      console.error("[EMAIL SERVICE] Erro HTTP:", response.status, detail);
+      throw new Error(
+        `Email Service request failed (${response.status} ${response.statusText})${
+          detail ? `: ${detail}` : ""
+        }`
+      );
+    }
+
+    const result = await response.json().catch(() => ({}));
     console.log("[EMAIL SERVICE] Resposta da API:", JSON.stringify(result, null, 2));
 
     // Verificar se o envio foi bem-sucedido
     if (result && typeof result === "object") {
       const resultObj = result as Record<string, unknown>;
-      
+
       if (resultObj.success === true || resultObj.messageId || resultObj.id) {
         console.log("[EMAIL SERVICE] Email enviado com sucesso para:", options.to);
         return {
@@ -69,9 +98,9 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
           messageId: (resultObj.messageId || resultObj.id) as string | undefined,
         };
       }
-      
+
       if (resultObj.error) {
-        throw new Error(`Email API Error: ${resultObj.error}`);
+        throw new Error(`Email Service Error: ${resultObj.error}`);
       }
     }
 
@@ -84,7 +113,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[EMAIL SERVICE] Erro ao enviar email para", options.to, ":", errorMessage);
-    
+
     return {
       success: false,
       error: errorMessage,
@@ -105,7 +134,7 @@ export async function sendEmailBatch(
   html: string
 ): Promise<EmailResult[]> {
   console.log("[EMAIL SERVICE] Iniciando envio em lote para", recipients.length, "destinatários");
-  
+
   const results: EmailResult[] = [];
 
   for (const recipient of recipients) {
