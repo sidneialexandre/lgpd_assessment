@@ -506,15 +506,49 @@ export const appRouter = router({
             // Enviar email via emailService
             const emailResult = await sendEmail({
               to: session.respondentEmail,
-              subject: `Avaliação de Conformidade LGPD - ${company?.razaoSocial || 'Sua Empresa'}`,
+              subject: `Convite: Avaliação de Conformidade LGPD - ${company?.razaoSocial || 'Sua Empresa'}`,
               html: `
-                <h2>Avaliação de Conformidade LGPD</h2>
-                <p>Olá ${session.respondentName || 'Respondente'},</p>
-                <p>Você foi selecionado para participar da avaliação de conformidade LGPD da empresa <strong>${company?.razaoSocial}</strong>.</p>
-                <p>Clique no link abaixo para acessar a avaliação:</p>
-                <p><a href="${absoluteLink}">Acessar Avaliação</a></p>
-                <p>Link direto: ${absoluteLink}</p>
-                <p>Obrigado pela sua participação!</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; border-radius: 8px 8px 0 0;">
+                    <h1 style="margin: 0; font-size: 28px; font-weight: bold;">Avaliação de Conformidade LGPD</h1>
+                    <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Lei Geral de Proteção de Dados</p>
+                  </div>
+                  
+                  <div style="background: #f9f9f9; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
+                    <p style="font-size: 16px; margin: 0 0 20px 0;">Olá <strong>${session.respondentName || 'Respondente'}</strong>,</p>
+                    
+                    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 15px 0;">
+                      Você foi selecionado para participar de uma <strong>avaliação de conformidade com a Lei Geral de Proteção de Dados (LGPD)</strong> da empresa <strong>${company?.razaoSocial}</strong>.
+                    </p>
+                    
+                    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 15px 0;">
+                      Esta avaliação é fundamental para identificar o nível de conformidade da organização com as regulamentações de proteção de dados e visa fortalecer a cultura de privacidade e segurança da informação.
+                    </p>
+                    
+                    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 25px 0;">
+                      <strong>Tempo estimado:</strong> 15-20 minutos<br>
+                      <strong>Questões:</strong> 50 questões divididas em 3 pilares estratégicos
+                    </p>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                      <a href="${absoluteLink}" style="display: inline-block; background: #667eea; color: white; padding: 14px 40px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; transition: background 0.3s;">Acessar Avaliação</a>
+                    </div>
+                    
+                    <p style="font-size: 13px; color: #666; margin: 20px 0; padding: 15px; background: #f0f0f0; border-left: 4px solid #667eea; border-radius: 4px;">
+                      <strong>Ou copie este link:</strong><br>
+                      <code style="word-break: break-all; font-size: 12px;">${absoluteLink}</code>
+                    </p>
+                    
+                    <p style="font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; color: #555;">
+                      Sua participação é essencial para o sucesso desta avaliação. Agradecemos antecipadamente pelo tempo e dedicação.
+                    </p>
+                  </div>
+                  
+                  <div style="background: #f0f0f0; padding: 20px; text-align: center; font-size: 12px; color: #666; border: 1px solid #e0e0e0; border-top: none;">
+                    <p style="margin: 0 0 8px 0;"><strong>Departamento de Proteção de Dados</strong></p>
+                    <p style="margin: 0;">${company?.razaoSocial || 'Sua Empresa'}</p>
+                  </div>
+                </div>
               `,
             });
             
