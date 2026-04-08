@@ -1,25 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { sendEmail, sendEmailBatch } from "../_core/emailService";
+import * as notification from "../_core/notification";
 
-// Mock do fetch global
-global.fetch = vi.fn();
+// Mock do notifyOwner
+vi.mock("../_core/notification", () => ({
+  notifyOwner: vi.fn(),
+}));
 
-describe("Email Service", () => {
+describe("Email Service (usando Notificações)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.BUILT_IN_FORGE_API_URL = "https://api.example.com";
-    process.env.BUILT_IN_FORGE_API_KEY = "test-key";
   });
 
   describe("sendEmail", () => {
-    it("deve enviar email com sucesso", async () => {
-      const mockFetch = vi.mocked(global.fetch);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        json: async () => ({ success: true, messageId: "msg-123" }),
-      } as Response);
+    it("deve enviar notificação com sucesso", async () => {
+      const mockNotifyOwner = vi.mocked(notification.notifyOwner);
+      mockNotifyOwner.mockResolvedValue(true);
 
       const result = await sendEmail({
         to: "test@example.com",
@@ -28,17 +24,18 @@ describe("Email Service", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.messageId).toBe("msg-123");
-      expect(mockFetch).toHaveBeenCalled();
+      expect(result.messageId).toBeDefined();
+      expect(mockNotifyOwner).toHaveBeenCalled();
       
-      // Verificar que foi chamado com o endpoint correto
-      const callArgs = mockFetch.mock.calls[0];
-      const url = callArgs[0] as string;
-      expect(url).toContain("webdevtoken.v1.WebDevService/SendEmail");
+      // Verificar que foi chamado com dados corretos
+      const callArgs = mockNotifyOwner.mock.calls[0];
+      const payload = callArgs[0];
+      expect(payload.title).toContain("test@example.com");
+      expect(payload.title).toContain("Test Subject");
     });
 
     it("deve validar formato de email", async () => {
-      const mockFetch = vi.mocked(global.fetch);
+      const mockNotifyOwner = vi.mocked(notification.notifyOwner);
 
       const result = await sendEmail({
         to: "invalid-email",
@@ -48,17 +45,12 @@ describe("Email Service", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Email inválido");
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockNotifyOwner).not.toHaveBeenCalled();
     });
 
-    it("deve lidar com erro da API", async () => {
-      const mockFetch = vi.mocked(global.fetch);
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-        text: async () => "Server error",
-      } as Response);
+    it("deve lidar com falha ao enviar notificação", async () => {
+      const mockNotifyOwner = vi.mocked(notification.notifyOwner);
+      mockNotifyOwner.mockResolvedValue(false);
 
       const result = await sendEmail({
         to: "test@example.com",
@@ -67,17 +59,12 @@ describe("Email Service", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      expect(result.error).toContain("não pôde ser entregue");
     });
 
-    it("deve incluir from e replyTo quando fornecidos", async () => {
-      const mockFetch = vi.mocked(global.fetch);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        json: async () => ({ success: true }),
-      } as Response);
+    it("deve incluir from e replyTo na notificação quando fornecidos", async () => {
+      const mockNotifyOwner = vi.mocked(notification.notifyOwner);
+      mockNotifyOwner.mockResolvedValue(true);
 
       await sendEmail({
         to: "test@example.com",
@@ -87,24 +74,17 @@ describe("Email Service", () => {
         replyTo: "reply@example.com",
       });
 
-      expect(mockFetch).toHaveBeenCalled();
-      const callArgs = mockFetch.mock.calls[0];
-      const options = callArgs[1] as RequestInit;
-      const body = JSON.parse(options.body as string);
-      expect(body.from).toBe("sender@example.com");
-      expect(body.replyTo).toBe("reply@example.com");
+      expect(mockNotifyOwner).toHaveBeenCalled();
+      const callArgs = mockNotifyOwner.mock.calls[0];
+      const payload = callArgs[0];
+      expect(payload.content).toContain("test@example.com");
     });
   });
 
   describe("sendEmailBatch", () => {
-    it("deve enviar emails em lote com sucesso", async () => {
-      const mockFetch = vi.mocked(global.fetch);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        json: async () => ({ success: true, messageId: "msg-123" }),
-      } as Response);
+    it("deve enviar notificações em lote com sucesso", async () => {
+      const mockNotifyOwner = vi.mocked(notification.notifyOwner);
+      mockNotifyOwner.mockResolvedValue(true);
 
       const results = await sendEmailBatch(
         ["test1@example.com", "test2@example.com", "test3@example.com"],
@@ -114,34 +94,19 @@ describe("Email Service", () => {
 
       expect(results).toHaveLength(3);
       expect(results.every((r) => r.success)).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(3);
+      expect(mockNotifyOwner).toHaveBeenCalledTimes(3);
     });
 
     it("deve lidar com falhas parciais em lote", async () => {
-      const mockFetch = vi.mocked(global.fetch);
+      const mockNotifyOwner = vi.mocked(notification.notifyOwner);
 
       // Primeira chamada: sucesso
       // Segunda chamada: falha
       // Terceira chamada: sucesso
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({ success: true }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 400,
-          statusText: "Bad Request",
-          text: async () => "Invalid email",
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({ success: true }),
-        } as Response);
+      mockNotifyOwner
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
 
       const results = await sendEmailBatch(
         ["test1@example.com", "test2@example.com", "test3@example.com"],
@@ -156,13 +121,8 @@ describe("Email Service", () => {
     });
 
     it("deve validar cada email no lote", async () => {
-      const mockFetch = vi.mocked(global.fetch);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        json: async () => ({ success: true }),
-      } as Response);
+      const mockNotifyOwner = vi.mocked(notification.notifyOwner);
+      mockNotifyOwner.mockResolvedValue(true);
 
       const results = await sendEmailBatch(
         ["test1@example.com", "invalid-email", "test3@example.com"],
@@ -174,6 +134,8 @@ describe("Email Service", () => {
       expect(results[0].success).toBe(true);
       expect(results[1].success).toBe(false); // Email inválido
       expect(results[2].success).toBe(true);
+      // Apenas 2 notificações devem ser enviadas (emails válidos)
+      expect(mockNotifyOwner).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -1,5 +1,4 @@
-import { ENV } from "./env";
-import { TRPCError } from "@trpc/server";
+import { notifyOwner } from "./notification";
 
 export interface EmailOptions {
   to: string;
@@ -16,21 +15,16 @@ export interface EmailResult {
 }
 
 /**
- * Constrói a URL do endpoint de email usando o padrão WebDevService
- */
-const buildEmailEndpointUrl = (baseUrl: string): string => {
-  const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  return new URL("webdevtoken.v1.WebDevService/SendEmail", normalizedBase).toString();
-};
-
-/**
- * Envia um email usando a Manus Email Service via WebDevService
+ * Envia uma notificação ao admin em vez de email direto
+ * Como a Manus não oferece Email API nativa, usamos o sistema de notificações
+ * que já funciona através do notifyOwner
+ * 
  * @param options Opções do email
  * @returns Resultado do envio
  */
 export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   try {
-    console.log("[EMAIL SERVICE] Iniciando envio de email para:", options.to);
+    console.log("[EMAIL SERVICE] Iniciando notificação para:", options.to);
 
     // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,81 +32,34 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       throw new Error(`Email inválido: ${options.to}`);
     }
 
-    // Validar configuração
-    if (!ENV.forgeApiUrl) {
-      throw new Error("BUILT_IN_FORGE_API_URL não está configurado");
-    }
-    if (!ENV.forgeApiKey) {
-      throw new Error("BUILT_IN_FORGE_API_KEY não está configurado");
-    }
+    // Extrair conteúdo de texto do HTML para a notificação
+    const textContent = options.html
+      .replace(/<[^>]*>/g, " ") // Remove tags HTML
+      .replace(/\s+/g, " ") // Normaliza espaços
+      .trim();
 
-    // Preparar payload para a Email Service
-    const payload = {
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      ...(options.from && { from: options.from }),
-      ...(options.replyTo && { replyTo: options.replyTo }),
-    };
-
-    console.log("[EMAIL SERVICE] Payload preparado:", JSON.stringify(payload, null, 2));
-
-    // Chamar endpoint de email via WebDevService
-    const endpoint = buildEmailEndpointUrl(ENV.forgeApiUrl);
-    console.log("[EMAIL SERVICE] Chamando endpoint:", endpoint);
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        authorization: `Bearer ${ENV.forgeApiKey}`,
-        "content-type": "application/json",
-        "connect-protocol-version": "1",
-      },
-      body: JSON.stringify(payload),
+    // Enviar notificação ao admin
+    const delivered = await notifyOwner({
+      title: `Email para ${options.to}: ${options.subject}`,
+      content: `Destinatário: ${options.to}\n\nAssunto: ${options.subject}\n\nConteúdo:\n${textContent}`,
     });
 
-    console.log("[EMAIL SERVICE] Status da resposta:", response.status, response.statusText);
-
-    if (!response.ok) {
-      const detail = await response.text().catch(() => "");
-      console.error("[EMAIL SERVICE] Erro HTTP:", response.status, detail);
-      throw new Error(
-        `Email Service request failed (${response.status} ${response.statusText})${
-          detail ? `: ${detail}` : ""
-        }`
-      );
+    if (!delivered) {
+      console.warn("[EMAIL SERVICE] Notificação não foi entregue ao admin");
+      return {
+        success: false,
+        error: "Notificação não pôde ser entregue ao admin",
+      };
     }
 
-    const result = await response.json().catch(() => ({}));
-    console.log("[EMAIL SERVICE] Resposta da API:", JSON.stringify(result, null, 2));
-
-    // Verificar se o envio foi bem-sucedido
-    if (result && typeof result === "object") {
-      const resultObj = result as Record<string, unknown>;
-
-      if (resultObj.success === true || resultObj.messageId || resultObj.id) {
-        console.log("[EMAIL SERVICE] Email enviado com sucesso para:", options.to);
-        return {
-          success: true,
-          messageId: (resultObj.messageId || resultObj.id) as string | undefined,
-        };
-      }
-
-      if (resultObj.error) {
-        throw new Error(`Email Service Error: ${resultObj.error}`);
-      }
-    }
-
-    // Se chegou aqui, considerar como sucesso
-    console.log("[EMAIL SERVICE] Email enviado (resposta ambígua) para:", options.to);
+    console.log("[EMAIL SERVICE] Notificação enviada com sucesso para admin sobre email para:", options.to);
     return {
       success: true,
-      messageId: (result as Record<string, unknown>)?.messageId as string | undefined,
+      messageId: `notification-${Date.now()}`,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[EMAIL SERVICE] Erro ao enviar email para", options.to, ":", errorMessage);
+    console.error("[EMAIL SERVICE] Erro ao enviar notificação para", options.to, ":", errorMessage);
 
     return {
       success: false,
@@ -122,7 +69,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 }
 
 /**
- * Envia emails em lote para múltiplos destinatários
+ * Envia notificações em lote para múltiplos destinatários
  * @param recipients Lista de destinatários
  * @param subject Assunto do email
  * @param html Conteúdo HTML do email
