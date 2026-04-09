@@ -1,4 +1,4 @@
-import { notifyOwner } from "./notification";
+import { Resend } from "resend";
 
 export interface EmailOptions {
   to: string;
@@ -14,17 +14,18 @@ export interface EmailResult {
   error?: string;
 }
 
+// Inicializar Resend
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
+
 /**
- * Envia uma notificação ao admin em vez de email direto
- * Como a Manus não oferece Email API nativa, usamos o sistema de notificações
- * que já funciona através do notifyOwner
- * 
+ * Envia um email usando Resend
  * @param options Opções do email
  * @returns Resultado do envio
  */
 export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   try {
-    console.log("[EMAIL SERVICE] Iniciando notificação para:", options.to);
+    console.log("[EMAIL SERVICE] Iniciando envio de email para:", options.to);
 
     // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,34 +33,48 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       throw new Error(`Email inválido: ${options.to}`);
     }
 
-    // Extrair conteúdo de texto do HTML para a notificação
-    const textContent = options.html
-      .replace(/<[^>]*>/g, " ") // Remove tags HTML
-      .replace(/\s+/g, " ") // Normaliza espaços
-      .trim();
-
-    // Enviar notificação ao admin
-    const delivered = await notifyOwner({
-      title: `Email para ${options.to}: ${options.subject}`,
-      content: `Destinatário: ${options.to}\n\nAssunto: ${options.subject}\n\nConteúdo:\n${textContent}`,
-    });
-
-    if (!delivered) {
-      console.warn("[EMAIL SERVICE] Notificação não foi entregue ao admin");
-      return {
-        success: false,
-        error: "Notificação não pôde ser entregue ao admin",
-      };
+    // Validar configuração
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY não está configurado");
     }
 
-    console.log("[EMAIL SERVICE] Notificação enviada com sucesso para admin sobre email para:", options.to);
+    if (!resend) {
+      throw new Error("Resend não foi inicializado corretamente");
+    }
+
+    // Preparar payload para Resend
+    const payload = {
+      from: options.from || "noreply@lgpdassess.com",
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      ...(options.replyTo && { replyTo: options.replyTo }),
+    };
+
+    console.log("[EMAIL SERVICE] Enviando email via Resend para:", options.to);
+
+    // Chamar Resend API
+    const response = await resend.emails.send(payload);
+
+    console.log("[EMAIL SERVICE] Resposta do Resend:", JSON.stringify(response, null, 2));
+
+    if (response.error) {
+      console.error("[EMAIL SERVICE] Erro do Resend:", response.error);
+      throw new Error(`Resend Error: ${response.error.message}`);
+    }
+
+    if (!response.data?.id) {
+      throw new Error("Resend não retornou um ID de mensagem");
+    }
+
+    console.log("[EMAIL SERVICE] Email enviado com sucesso para:", options.to, "ID:", response.data.id);
     return {
       success: true,
-      messageId: `notification-${Date.now()}`,
+      messageId: response.data.id,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[EMAIL SERVICE] Erro ao enviar notificação para", options.to, ":", errorMessage);
+    console.error("[EMAIL SERVICE] Erro ao enviar email para", options.to, ":", errorMessage);
 
     return {
       success: false,
@@ -69,7 +84,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 }
 
 /**
- * Envia notificações em lote para múltiplos destinatários
+ * Envia emails em lote para múltiplos destinatários
  * @param recipients Lista de destinatários
  * @param subject Assunto do email
  * @param html Conteúdo HTML do email
