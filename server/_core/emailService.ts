@@ -43,8 +43,10 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     }
 
     // Preparar payload para Resend
+    // Usar domínio de teste do Resend (onboarding.resend.dev) para desenvolvimento
+    // Para produção, configure um domínio verificado e atualize este valor
     const payload = {
-      from: options.from || "noreply@lgpdassess.com",
+      from: options.from || "onboarding@resend.dev",
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -68,6 +70,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     }
 
     console.log("[EMAIL SERVICE] Email enviado com sucesso para:", options.to, "ID:", response.data.id);
+    console.log("[EMAIL SERVICE] Domínio de envio: onboarding@resend.dev (domínio de teste)");
     return {
       success: true,
       messageId: response.data.id,
