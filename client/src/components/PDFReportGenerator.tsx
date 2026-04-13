@@ -75,7 +75,10 @@ export async function generatePDFReport(data: ReportData) {
     pdf.text(`${data.compliancePercentage}%`, pageWidth / 2, yPosition + 8, { align: 'center' });
     pdf.setFontSize(10);
     (pdf as any).setFont(undefined, 'normal');
-    yPosition = addWrappedText(`Pontuação Total: ${data.totalScore.toLocaleString()} / 10.000 pontos`, 15, yPosition + 12, pageWidth - 30, 10);
+    // Destaque da pontuação total
+    pdf.setFontSize(11);
+    (pdf as any).setFont(undefined, 'bold');
+    yPosition = addWrappedText(`Pontuação Total: ${data.totalScore.toLocaleString()} / 100.000 pontos`, 15, yPosition + 12, pageWidth - 30, 11);
     yPosition += 10;
     
     // Groups Compliance
@@ -219,7 +222,7 @@ function generateHTMLContent(data: ReportData): string {
     <div class="compliance-box">
       <p class="text-small">Conformidade Total</p>
       <p class="compliance-value">${data.compliancePercentage}%</p>
-      <p class="text-small">Pontuação Total: ${data.totalScore.toLocaleString()} / 10.000 pontos</p>
+      <p class="text-small"><strong>Pontuação Total: ${data.totalScore.toLocaleString()} / 100.000 pontos</strong></p>
     </div>
 
     <div>
