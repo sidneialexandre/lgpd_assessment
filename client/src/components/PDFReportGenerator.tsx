@@ -15,6 +15,10 @@ export interface ReportData {
     totalScore?: number;
     compliancePercentage?: number;
   }>;
+  pillars?: Array<{
+    name: string;
+    compliancePercentage: number;
+  }>;
   generatedAt: Date;
 }
 
@@ -127,6 +131,60 @@ export async function generatePDFReport(data: ReportData) {
       pdf.rect(barX, barY, fillWidth, barHeight, 'F');
       
       yPosition += 15;
+    }
+    
+    // Pillars Compliance Section
+    if (data.pillars && data.pillars.length > 0) {
+      yPosition += 10;
+      if (yPosition > pageHeight - 40) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      
+      pdf.setTextColor(0, 0, 0);
+      yPosition = addWrappedText('Conformidade por Pilar', 15, yPosition, pageWidth - 30, 12, true);
+      yPosition += 5;
+      
+      for (const pillar of data.pillars) {
+        if (yPosition > pageHeight - 30) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+        
+        // Pilar header
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(10, yPosition - 2, pageWidth - 20, 8, 'F');
+        pdf.setFontSize(11);
+        (pdf as any).setFont(undefined, 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(pillar.name, 15, yPosition + 3);
+        pdf.setFontSize(10);
+        (pdf as any).setFont(undefined, 'normal');
+        pdf.text(`${pillar.compliancePercentage}%`, pageWidth - 30, yPosition + 3, { align: 'right' });
+        yPosition += 10;
+        
+        // Compliance percentage
+        pdf.setFontSize(14);
+        (pdf as any).setFont(undefined, 'bold');
+        pdf.text(`${pillar.compliancePercentage}%`, 15, yPosition + 3);
+        
+        // Progress bar
+        const barWidth = pageWidth - 50;
+        const barX = 15;
+        const barY = yPosition + 6;
+        const barHeight = 4;
+        
+        // Background bar
+        pdf.setFillColor(229, 231, 235); // #e5e7eb
+        pdf.rect(barX, barY, barWidth, barHeight, 'F');
+        
+        // Filled bar
+        const fillWidth = (barWidth * (pillar.compliancePercentage || 0)) / 100;
+        pdf.setFillColor(59, 130, 246); // #3b82f6
+        pdf.rect(barX, barY, fillWidth, barHeight, 'F');
+        
+        yPosition += 15;
+      }
     }
     
     // Info Section

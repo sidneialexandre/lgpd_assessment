@@ -44,7 +44,7 @@ import {
   getCompanyAverageCompliance,
   getRespondentPreviousScores
 } from "./db";
-import { groups, assessmentGroups } from "../drizzle/schema";
+import { groups, assessmentGroups, companies } from "../drizzle/schema";
 import { inArray, eq } from "drizzle-orm";
 
 export const appRouter = router({
@@ -251,6 +251,12 @@ export const appRouter = router({
         const assessment = await getAssessmentById(input.assessmentId);
         if (!assessment) return null;
 
+        const db = await getDb();
+        
+        // Get company information including razaoSocial
+        const company = db ? await db.select().from(companies).where(eq(companies.id, assessment.companyId)).limit(1) : [];
+        const companyInfo = company && company.length > 0 ? company[0] : null;
+
         const sessions = await getAssessmentRespondentSessions(input.assessmentId);
         const completedSessions = sessions.filter(s => s.isCompleted === 1);
         
@@ -267,7 +273,6 @@ export const appRouter = router({
         groups.forEach(g => totalExpectedRespondents += g.respondentCount);
         
         // Get assessment group data with compliance percentages
-        const db = await getDb();
         const assessmentGroupsData = db ? await db
           .select()
           .from(assessmentGroups)
@@ -300,6 +305,7 @@ export const appRouter = router({
 
         return {
           assessment,
+          companyName: companyInfo?.razaoSocial || "Empresa " + assessment.companyId,
           totalRespondents: totalExpectedRespondents,
           completedRespondents: completedSessions.length,
           pendingRespondents: totalPendingRespondents,

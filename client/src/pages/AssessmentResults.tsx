@@ -27,10 +27,35 @@ interface AssessmentResultsData {
     isCompleted: number;
     createdAt: Date;
   };
+  companyName?: string;
   groups: GroupResult[];
   totalRespondents: number;
   completedRespondents: number;
   pendingRespondents: number;
+}
+
+// Função para calcular conformidade por pilar
+function calculatePillarCompliance(groups: GroupResult[]) {
+  // Cada pilar tem 50 questões (15 + 15 + 20 = 50 questões totais)
+  // Pilar 1: Segurança da Informação (15 questões) = 15.000 pontos
+  // Pilar 2: Conformidade Documental (15 questões) = 15.000 pontos
+  // Pilar 3: Cultura de Privacidade (20 questões) = 20.000 pontos
+  
+  let totalScore = 0;
+  groups.forEach(group => {
+    totalScore += group.totalScore || 0;
+  });
+
+  // Distribuir pontos proporcionalmente entre os pilares
+  const securityScore = (totalScore * 15) / 50;
+  const complianceScore = (totalScore * 15) / 50;
+  const privacyScore = (totalScore * 20) / 50;
+
+  return {
+    security: Math.round((securityScore / 15000) * 100),
+    compliance: Math.round((complianceScore / 15000) * 100),
+    privacy: Math.round((privacyScore / 20000) * 100),
+  };
 }
 
 export default function AssessmentResults() {
@@ -61,8 +86,11 @@ export default function AssessmentResults() {
       ? parseFloat(data.assessment.compliancePercentage)
       : data.assessment.compliancePercentage;
 
+    // Calcular conformidade por pilar
+    const pillarCompliance = calculatePillarCompliance(data.groups || []);
+
     const reportData = {
-      companyName: "Empresa " + data.assessment.companyId,
+      companyName: data.companyName || "Empresa " + data.assessment.companyId,
       assessmentNumber: data.assessment.assessmentNumber,
       totalScore: data.assessment.totalScore,
       compliancePercentage: compliancePercent,
@@ -81,6 +109,20 @@ export default function AssessmentResults() {
           compliancePercentage: groupCompliance,
         };
       }),
+      pillars: [
+        {
+          name: "Segurança da Informação",
+          compliancePercentage: pillarCompliance.security,
+        },
+        {
+          name: "Conformidade Documental",
+          compliancePercentage: pillarCompliance.compliance,
+        },
+        {
+          name: "Cultura de Privacidade",
+          compliancePercentage: pillarCompliance.privacy,
+        },
+      ],
       generatedAt: new Date(),
     };
 
