@@ -36,10 +36,11 @@ interface AssessmentResultsData {
 
 // Função para calcular conformidade por pilar
 function calculatePillarCompliance(groups: GroupResult[]) {
-  // Cada pilar tem 50 questões (15 + 15 + 20 = 50 questões totais)
-  // Pilar 1: Segurança da Informação (15 questões) = 15.000 pontos
-  // Pilar 2: Conformidade Documental (15 questões) = 15.000 pontos
-  // Pilar 3: Cultura de Privacidade (20 questões) = 20.000 pontos
+  // Total de 50 questões em 3 pilares
+  // Pilar 1: Segurança da Informação (15 questões) = 15.000 pontos máximo
+  // Pilar 2: Conformidade Documental (15 questões) = 15.000 pontos máximo
+  // Pilar 3: Cultura de Privacidade (20 questões) = 20.000 pontos máximo
+  // Total máximo: 100.000 pontos
   
   let totalScore = 0;
   groups.forEach(group => {
@@ -88,7 +89,7 @@ export default function AssessmentResults() {
 
     // Calcular conformidade por pilar
     const pillarCompliance = calculatePillarCompliance(data.groups || []);
-
+    
     const reportData = {
       companyName: data.companyName || "Empresa " + data.assessment.companyId,
       assessmentNumber: data.assessment.assessmentNumber,
