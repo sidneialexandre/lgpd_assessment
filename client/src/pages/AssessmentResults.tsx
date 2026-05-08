@@ -60,19 +60,27 @@ function calculatePillarCompliance(groups: GroupResult[]) {
 }
 
 export default function AssessmentResults() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [assessmentId, setAssessmentId] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
-    const admin = params.get("admin") === "true";
-    if (id) {
-      setAssessmentId(parseInt(id));
-      setIsAdmin(admin);
+    // Try to get ID from URL path (e.g., /assessment-results/540004)
+    const pathMatch = location.match(/\/assessment-results\/(\d+)/);
+    if (pathMatch && pathMatch[1]) {
+      setAssessmentId(parseInt(pathMatch[1]));
+      setIsAdmin(false);
+    } else {
+      // Fallback to query string for backward compatibility
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      const admin = params.get("admin") === "true";
+      if (id) {
+        setAssessmentId(parseInt(id));
+        setIsAdmin(admin);
+      }
     }
-  }, []);
+  }, [location]);
 
   const resultsQuery = trpc.assessment.getWithDetails.useQuery(
     { assessmentId: assessmentId || 0 },
