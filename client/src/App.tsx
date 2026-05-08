@@ -155,7 +155,7 @@ function Router() {
       <Route path={"/admin"} component={() => <AdminRoute component={AssessmentAdmin} />} />
       <Route path={"/progress-dashboard"} component={() => <AdminRoute component={ProgressDashboard} />} />
       <Route path={"/comparison"} component={() => <AdminRoute component={ComparisonPage} />} />
-      <Route path={"/assessment-results"} component={() => <ProtectedRoute component={AssessmentResults} />} />
+      <Route path={"/assessment-results/:id"} component={() => <ProtectedRoute component={AssessmentResults} />} />
       
       {/* Error routes */}
       <Route path={"/404"} component={NotFound} />

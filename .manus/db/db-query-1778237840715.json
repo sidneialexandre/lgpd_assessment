@@ -1,0 +1,14 @@
+{
+  "query": "SELECT id, companyId FROM assessments LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xqg8NdygDYRt33.root --database ZBqZx56cHVWW4dhPYzUvCJ --execute SELECT id, companyId FROM assessments LIMIT 1;",
+  "rows": [
+    {
+      "id": "540004",
+      "companyId": "90002"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcompanyId\n540004\t90002\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}
