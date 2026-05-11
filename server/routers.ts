@@ -254,7 +254,9 @@ export const appRouter = router({
         const db = await getDb();
         
         // Get company information including razaoSocial
-        const company = db ? await db.select().from(companies).where(eq(companies.id, assessment.companyId)).limit(1) : [];
+        // Convert companyId to number for comparison
+        const companyId = typeof assessment.companyId === 'string' ? parseInt(assessment.companyId, 10) : assessment.companyId;
+        const company = db ? await db.select().from(companies).where(eq(companies.id, companyId)).limit(1) : [];
         const companyInfo = company && company.length > 0 ? company[0] : null;
 
         const sessions = await getAssessmentRespondentSessions(input.assessmentId);

@@ -65,16 +65,18 @@ export default function AssessmentResults() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    // Check query string first for admin flag
+    const params = new URLSearchParams(window.location.search);
+    const admin = params.get("admin") === "true";
+    
     // Try to get ID from URL path (e.g., /assessment-results/540004)
     const pathMatch = location.match(/\/assessment-results\/(\d+)/);
     if (pathMatch && pathMatch[1]) {
       setAssessmentId(parseInt(pathMatch[1]));
-      setIsAdmin(false);
+      setIsAdmin(admin); // Use admin flag from query string
     } else {
       // Fallback to query string for backward compatibility
-      const params = new URLSearchParams(window.location.search);
       const id = params.get("id");
-      const admin = params.get("admin") === "true";
       if (id) {
         setAssessmentId(parseInt(id));
         setIsAdmin(admin);
@@ -227,7 +229,17 @@ export default function AssessmentResults() {
             Resultados da Avaliação LGPD
           </h1>
           <p className="text-slate-600">
-            ID da Empresa: <span className="font-semibold">{data.assessment.companyId}</span>
+            {data.companyName ? (
+              <>
+                Empresa: <span className="font-semibold">{data.companyName}</span>
+                <br />
+                <span className="text-sm text-slate-500">ID: {data.assessment.companyId}</span>
+              </>
+            ) : (
+              <>
+                ID da Empresa: <span className="font-semibold">{data.assessment.companyId}</span>
+              </>
+            )}
           </p>
         </div>
 
