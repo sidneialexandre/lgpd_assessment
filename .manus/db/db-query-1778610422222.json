@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, cnpj, razaoSocial FROM companies WHERE id = 120002 LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xqg8NdygDYRt33.root --database ZBqZx56cHVWW4dhPYzUvCJ --execute SELECT id, cnpj, razaoSocial FROM companies WHERE id = 120002 LIMIT 1;",
+  "rows": [
+    {
+      "id": "120002",
+      "cnpj": "34284790000104",
+      "razaoSocial": "Silvana e Elaine Casa Noturna Ltda"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcnpj\trazaoSocial\n120002\t34284790000104\tSilvana e Elaine Casa Noturna Ltda\n",
+  "stderr": "",
+  "execution_time_ms": 325
+}

@@ -100,8 +100,10 @@ export default function AssessmentResults() {
     // Calcular conformidade por pilar
     const pillarCompliance = calculatePillarCompliance(data.groups || []);
     
+    const finalCompanyName = data.companyName || `Empresa ${data.assessment.companyId}`;
+    
     const reportData = {
-      companyName: data.companyName || "Empresa " + data.assessment.companyId,
+      companyName: finalCompanyName,
       assessmentNumber: data.assessment.assessmentNumber,
       totalScore: data.assessment.totalScore,
       compliancePercentage: compliancePercent,

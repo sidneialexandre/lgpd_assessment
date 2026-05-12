@@ -954,3 +954,23 @@ Total de Testes: 206 (15 novos testes para as funcionalidades)
 
 Total de Testes: 216 (todos passando)
 Aplicação pronta para publicação
+
+
+## Bug Crítico - PDF Exibindo "Empresa 120002" ao invés do Nome da Empresa (CORRIGIDO)
+
+- [x] PDF exibindo "Empresa 120002" ao invés de "Silvana e Elaine Casa Noturna Ltda"
+- [x] Problema: companyName não estava sendo retornado corretamente do backend
+- [x] Solução: Corrigido o procedimento getWithDetails para garantir que sempre retorna o nome correto
+- [x] Adicionado String() para garantir que razaoSocial é convertido corretamente
+- [x] Criados 7 novos testes para validar o fluxo completo do PDF
+- [x] Todos os 223 testes passando
+
+## Testes Adicionados para Validação do PDF
+
+- [x] company-name-pdf.test.ts: 4 testes para verificar dados da empresa e assessment
+- [x] pdf-company-name-integration.test.ts: 3 testes para simular o fluxo completo do PDF
+- [x] Verificação de que o nome da empresa é "Silvana e Elaine Casa Noturna Ltda"
+- [x] Verificação de que o fallback "Empresa 120002" não está sendo usado
+
+Total de Testes: 223 (todos passando)
+Aplicação pronta para publicação com PDF corrigido

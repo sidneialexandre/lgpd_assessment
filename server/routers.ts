@@ -256,7 +256,12 @@ export const appRouter = router({
         // Get company information including razaoSocial
         // Convert companyId to number for comparison
         const companyId = typeof assessment.companyId === 'string' ? parseInt(assessment.companyId, 10) : assessment.companyId;
-        const company = db ? await db.select().from(companies).where(eq(companies.id, companyId)).limit(1) : [];
+        
+        if (!db) {
+          return null;
+        }
+        
+        const company = await db.select().from(companies).where(eq(companies.id, companyId)).limit(1);
         const companyInfo = company && company.length > 0 ? company[0] : null;
 
         const sessions = await getAssessmentRespondentSessions(input.assessmentId);
@@ -304,10 +309,15 @@ export const appRouter = router({
         });
 
         const totalPendingRespondents = totalExpectedRespondents - completedSessions.length;
+        
+        // Ensure companyName is always set correctly
+        const finalCompanyName = companyInfo?.razaoSocial 
+          ? String(companyInfo.razaoSocial)
+          : `Empresa ${assessment.companyId}`;
 
         return {
           assessment,
-          companyName: companyInfo?.razaoSocial || "Empresa " + assessment.companyId,
+          companyName: finalCompanyName,
           totalRespondents: totalExpectedRespondents,
           completedRespondents: completedSessions.length,
           pendingRespondents: totalPendingRespondents,
