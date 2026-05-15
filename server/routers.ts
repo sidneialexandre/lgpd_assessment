@@ -248,8 +248,15 @@ export const appRouter = router({
     getWithDetails: protectedProcedure
       .input(z.object({ assessmentId: z.number() }))
       .query(async ({ input }) => {
+        console.log('[getWithDetails] === INICIANDO PROCEDIMENTO ===');
+        console.log('[getWithDetails] input.assessmentId:', input.assessmentId);
+        
         const assessment = await getAssessmentById(input.assessmentId);
-        if (!assessment) return null;
+        console.log('[getWithDetails] assessment encontrada:', !!assessment);
+        if (!assessment) {
+          console.log('[getWithDetails] assessment não encontrada, retornando null');
+          return null;
+        }
 
         const db = await getDb();
         
@@ -314,6 +321,12 @@ export const appRouter = router({
         const finalCompanyName = companyInfo?.razaoSocial 
           ? String(companyInfo.razaoSocial)
           : `Empresa ${assessment.companyId}`;
+        
+        console.log('[getWithDetails] === RETORNANDO DADOS ===');
+        console.log('[getWithDetails] companyInfo:', companyInfo);
+        console.log('[getWithDetails] finalCompanyName:', finalCompanyName);
+        console.log('[getWithDetails] assessment.companyId:', assessment.companyId);
+        console.log('[getWithDetails] groups count:', groupStats.length);
 
         return {
           assessment,

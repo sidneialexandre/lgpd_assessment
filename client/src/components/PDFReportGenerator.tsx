@@ -24,7 +24,18 @@ export interface ReportData {
 
 export async function generatePDFReport(data: ReportData) {
   try {
-    console.log('[PDF] Iniciando geracao de PDF', { companyName: data.companyName, assessmentNumber: data.assessmentNumber });
+    console.log('[PDF] === INICIANDO GERAÇÃO DE PDF ===');
+    console.log('[PDF] Dados recebidos:', {
+      companyName: data.companyName,
+      companyNameType: typeof data.companyName,
+      companyNameLength: data.companyName?.length,
+      assessmentNumber: data.assessmentNumber,
+      totalScore: data.totalScore,
+      compliancePercentage: data.compliancePercentage,
+      groupsCount: data.groups?.length,
+      pillarsCount: data.pillars?.length,
+    });
+    console.log('[PDF] Dados completos:', JSON.stringify(data, null, 2));
     
     // Create PDF directly without html2canvas to avoid gradient issues
     const pdf = new jsPDF({
@@ -64,7 +75,12 @@ export async function generatePDFReport(data: ReportData) {
     pdf.setFillColor(243, 244, 246); // #f3f4f6
     pdf.rect(10, yPosition - 2, pageWidth - 20, 40, 'F');
     yPosition = addWrappedText('Informações da Empresa', 15, yPosition + 3, pageWidth - 30, 12, true);
-    yPosition = addWrappedText(`Empresa: ${data.companyName}`, 15, yPosition + 2, pageWidth - 30, 10);
+    
+    // Validate companyName
+    const displayCompanyName = data.companyName && data.companyName.trim() ? data.companyName : 'Empresa desconhecida';
+    console.log('[PDF] Display company name:', displayCompanyName, 'original:', data.companyName);
+    
+    yPosition = addWrappedText(`Empresa: ${displayCompanyName}`, 15, yPosition + 2, pageWidth - 30, 10);
     yPosition = addWrappedText(`Avaliação: Avaliação ${data.assessmentNumber}`, 15, yPosition + 2, pageWidth - 30, 10);
     yPosition = addWrappedText(`Total de Respondentes: ${data.completedRespondents} de ${data.totalRespondents}`, 15, yPosition + 2, pageWidth - 30, 10);
     yPosition += 10;
@@ -209,7 +225,9 @@ export async function generatePDFReport(data: ReportData) {
     pdf.text('Relatório gerado automaticamente pelo sistema de Avaliação de Conformidade LGPD', pageWidth / 2, pageHeight - 10, { align: 'center' });
     
     // Save PDF
-    const filename = `LGPD_Relatorio_${data.companyName.replace(/\s+/g, "_")}_${data.assessmentNumber}.pdf`;
+    const safeCompanyName = (data.companyName && data.companyName.trim()) ? data.companyName.replace(/\s+/g, "_") : "Empresa_Desconhecida";
+    const filename = `LGPD_Relatorio_${safeCompanyName}_${data.assessmentNumber}.pdf`;
+    console.log('[PDF] Filename:', filename, 'safeCompanyName:', safeCompanyName);
     pdf.save(filename);
     
     console.log('[PDF] PDF gerado e salvo com sucesso:', filename);
