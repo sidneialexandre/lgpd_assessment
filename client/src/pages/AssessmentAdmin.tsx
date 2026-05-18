@@ -23,6 +23,8 @@ export default function AssessmentAdmin() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [selectedRespondent, setSelectedRespondent] = useState<{ id: number; name: string; email: string; link: string } | null>(null);
+  const [editingCompanyName, setEditingCompanyName] = useState(false);
+  const [companyNameInput, setCompanyNameInput] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -73,6 +75,17 @@ export default function AssessmentAdmin() {
     },
     onError: (error) => {
       alert(`Erro ao enviar emails: ${error.message}`);
+    },
+  });
+
+  const updateCompanyNameMutation = trpc.company.updateName.useMutation({
+    onSuccess: () => {
+      setEditingCompanyName(false);
+      getDetailsQuery.refetch();
+      alert("Nome da empresa atualizado com sucesso!");
+    },
+    onError: (error: any) => {
+      alert(`Erro ao atualizar nome da empresa: ${error.message}`);
     },
   });
 
@@ -253,6 +266,120 @@ export default function AssessmentAdmin() {
             Voltar
           </Button>
         </div>
+
+        {/* Company Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações da Empresa</CardTitle>
+            <CardDescription>
+              Dados da empresa avaliada
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Company ID */}
+                <div>
+                  <p className="text-sm text-slate-600 mb-2">Código Interno (ID)</p>
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <p className="text-lg font-semibold text-slate-900">{data.assessment.companyId}</p>
+                  </div>
+                </div>
+
+                {/* Company Name */}
+                <div>
+                  <p className="text-sm text-slate-600 mb-2">Nome da Empresa</p>
+                  {editingCompanyName ? (
+                    <div className="flex gap-2">
+                      <Input
+                        value={companyNameInput}
+                        onChange={(e) => setCompanyNameInput(e.target.value)}
+                        placeholder="Nome da empresa"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (companyNameInput.trim()) {
+                            updateCompanyNameMutation.mutate({
+                              companyId: data.assessment.companyId,
+                              razaoSocial: companyNameInput,
+                            });
+                          }
+                        }}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingCompanyName(false)}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+                      <p className="text-lg font-semibold text-slate-900">{data.companyName || "Sem nome"}</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingCompanyName(true);
+                          setCompanyNameInput(data.companyName || "");
+                        }}
+                      >
+                        Editar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Groups Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Grupos de Respondentes</CardTitle>
+            <CardDescription>
+              Definição dos grupos e departamentos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.groups && data.groups.length > 0 ? (
+              <div className="space-y-4">
+                {data.groups.map((group: any, index: number) => (
+                  <div key={group.id} className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-600 mb-1">Grupo</p>
+                        <p className="text-sm font-semibold text-slate-900">{group.groupName}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-600 mb-1">Departamento</p>
+                        <p className="text-sm text-slate-700">{group.departmentName}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-600 mb-1">Total de Respondentes</p>
+                        <p className="text-sm font-semibold text-slate-900">{group.respondentCount}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-600 mb-1">Respondentes Completados</p>
+                        <Badge className={group.completedCount === group.respondentCount ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                          {group.completedCount}/{group.respondentCount}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-600">Nenhum grupo configurado para esta avaliação.</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Assessment Status */}
         <Card>

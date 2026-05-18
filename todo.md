@@ -974,3 +974,12 @@ Aplicação pronta para publicação
 
 Total de Testes: 223 (todos passando)
 Aplicação pronta para publicação com PDF corrigido
+
+
+## Melhorias no Painel de Administração - Nova Sessão
+
+- [x] Adicionar visualização dos dados dos grupos de respondentes no painel admin
+- [x] Adicionar visualização dos dados da empresa (Nome, ID) no painel admin
+- [x] Adicionar edição dos dados da empresa (Nome, ID) no painel admin
+- [x] Criar procedimento tRPC para atualizar dados da empresa
+- [x] Testar as alterações no painel de administração

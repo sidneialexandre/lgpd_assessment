@@ -123,6 +123,17 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await getSuggestedGroupsForCNPJ(input.cnpj);
       }),
+
+    updateName: protectedProcedure
+      .input(z.object({ companyId: z.number(), razaoSocial: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) {
+          throw new Error("Database not available");
+        }
+        await db.update(companies).set({ razaoSocial: input.razaoSocial }).where(eq(companies.id, input.companyId));
+        return await getCompanyById(input.companyId);
+      }),
   }),
 
   group: router({
