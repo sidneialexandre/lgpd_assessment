@@ -27,7 +27,7 @@ interface AssessmentResultsData {
     isCompleted: number;
     createdAt: Date;
   };
-  companyName?: string;
+  companyName: string;  // Tornar obrigatório
   groups: GroupResult[];
   totalRespondents: number;
   completedRespondents: number;
@@ -185,6 +185,12 @@ export default function AssessmentResults() {
   }
 
   const data = resultsQuery.data as AssessmentResultsData | undefined;
+  
+  // Debug logging
+  console.log('[RENDER] data:', data);
+  console.log('[RENDER] data.companyName:', data?.companyName);
+  console.log('[RENDER] data.companyName type:', typeof data?.companyName);
+  console.log('[RENDER] data.assessment.companyId:', data?.assessment?.companyId);
 
   if (!data || data.assessment.isCompleted !== 1) {
     return (

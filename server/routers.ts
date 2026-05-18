@@ -247,6 +247,16 @@ export const appRouter = router({
 
     getWithDetails: protectedProcedure
       .input(z.object({ assessmentId: z.number() }))
+      .output(z.object({
+        assessment: z.any(),
+        companyName: z.string(),
+        totalRespondents: z.number(),
+        completedRespondents: z.number(),
+        pendingRespondents: z.number(),
+        sessions: z.array(z.any()),
+        completedSessions: z.array(z.any()),
+        groups: z.array(z.any()),
+      }).nullable())
       .query(async ({ input }) => {
         console.log('[getWithDetails] === INICIANDO PROCEDIMENTO ===');
         console.log('[getWithDetails] input.assessmentId:', input.assessmentId);
