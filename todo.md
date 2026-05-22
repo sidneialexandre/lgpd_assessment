@@ -995,3 +995,17 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Renderização de CNPJ no PDF gerado
 - [x] Todos os 216 testes passando
 - [x] PDF agora exibe: Empresa (Nome), CNPJ, Avaliação, Total de Respondentes
+
+
+## Comparação de Ciclos de Avaliação - Nova Funcionalidade (Completada)
+
+- [x] Criar modelo de dados para armazenar histórico de avaliações
+- [x] Criar procedimento tRPC para recuperar múltiplas avaliações por empresa (getAssessmentHistory)
+- [x] Criar procedimento tRPC para comparar ciclos (compareAssessments)
+- [x] Criar componente de seleção de ciclos para comparação (AssessmentComparison.tsx)
+- [x] Implementar gráfico de evolução de conformidade (LineChart)
+- [x] Implementar gráfico de evolução de pontuação (BarChart)
+- [x] Implementar tabela comparativa de conformidade
+- [x] Criar visualização de tendências (melhoria/piora com ícones e cores)
+- [x] Adicionar rota /assessment-comparison ao App.tsx
+- [x] Testar a funcionalidade de comparação - 216 testes passando

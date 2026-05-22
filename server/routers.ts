@@ -406,6 +406,56 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await getRespondentPreviousScores(input.companyId, input.currentAssessmentNumber);
       }),
+
+    getAssessmentHistory: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(async ({ input }) => {
+        const assessments = await getCompanyAssessmentsWithScores(input.companyId);
+        return assessments.map(a => ({
+          id: a.id,
+          assessmentNumber: a.assessmentNumber,
+          createdAt: a.createdAt,
+          compliancePercentage: a.compliancePercentage,
+          totalScore: a.totalScore,
+          maxScore: a.maxScore,
+        }));
+      }),
+
+    compareAssessments: protectedProcedure
+      .input(z.object({ 
+        companyId: z.number(),
+        assessmentId1: z.number(),
+        assessmentId2: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const assessment1 = await getAssessmentById(input.assessmentId1);
+        const assessment2 = await getAssessmentById(input.assessmentId2);
+        
+        if (!assessment1 || !assessment2) {
+          throw new Error('Uma ou ambas as avaliações não foram encontradas');
+        }
+
+        return {
+          assessment1: {
+            id: assessment1.id,
+            assessmentNumber: assessment1.assessmentNumber,
+            createdAt: assessment1.createdAt,
+            compliancePercentage: assessment1.compliancePercentage,
+            totalScore: assessment1.totalScore,
+          },
+          assessment2: {
+            id: assessment2.id,
+            assessmentNumber: assessment2.assessmentNumber,
+            createdAt: assessment2.createdAt,
+            compliancePercentage: assessment2.compliancePercentage,
+            totalScore: assessment2.totalScore,
+          },
+          improvement: {
+            complianceChange: (assessment2.compliancePercentage || 0) - (assessment1.compliancePercentage || 0),
+            scoreChange: (assessment2.totalScore || 0) - (assessment1.totalScore || 0),
+          },
+        };
+      }),
   }),
 
   respondent: router({

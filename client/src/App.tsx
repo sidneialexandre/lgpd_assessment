@@ -17,6 +17,7 @@ import RespondentDashboard from "./pages/RespondentDashboard";
 import AssessmentResults from "./pages/AssessmentResults";
 import ProgressDashboard from "./pages/ProgressDashboard";
 import ComparisonPage from "./pages/ComparisonPage";
+import AssessmentComparison from "./pages/AssessmentComparison";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,7 @@ function Router() {
       <Route path={"/admin"} component={() => <AdminRoute component={AssessmentAdmin} />} />
       <Route path={"/progress-dashboard"} component={() => <AdminRoute component={ProgressDashboard} />} />
       <Route path={"/comparison"} component={() => <AdminRoute component={ComparisonPage} />} />
+      <Route path={"/assessment-comparison"} component={() => <AdminRoute component={AssessmentComparison} />} />
       <Route path={"/assessment-results/:id"} component={() => <ProtectedRoute component={AssessmentResults} />} />
       
       {/* Error routes */}
