@@ -415,9 +415,8 @@ export const appRouter = router({
           id: a.id,
           assessmentNumber: a.assessmentNumber,
           createdAt: a.createdAt,
-          compliancePercentage: a.compliancePercentage,
-          totalScore: a.totalScore,
-          maxScore: a.maxScore,
+          compliancePercentage: typeof a.compliancePercentage === 'string' ? parseFloat(a.compliancePercentage) : a.compliancePercentage || 0,
+          totalScore: a.totalScore || 0,
         }));
       }),
 
@@ -451,7 +450,7 @@ export const appRouter = router({
             totalScore: assessment2.totalScore,
           },
           improvement: {
-            complianceChange: (assessment2.compliancePercentage || 0) - (assessment1.compliancePercentage || 0),
+            complianceChange: (typeof assessment2.compliancePercentage === 'string' ? parseFloat(assessment2.compliancePercentage) : assessment2.compliancePercentage || 0) - (typeof assessment1.compliancePercentage === 'string' ? parseFloat(assessment1.compliancePercentage) : assessment1.compliancePercentage || 0),
             scoreChange: (assessment2.totalScore || 0) - (assessment1.totalScore || 0),
           },
         };
