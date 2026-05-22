@@ -983,3 +983,15 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Adicionar edição dos dados da empresa (Nome, ID) no painel admin
 - [x] Criar procedimento tRPC para atualizar dados da empresa
 - [x] Testar as alterações no painel de administração
+
+
+## Correção Definitiva do PDF - CNPJ e Nome da Empresa (Sessão Final)
+
+- [x] Investigação profunda do fluxo de dados do banco até o PDF
+- [x] Adicionado companyCNPJ ao procedimento getWithDetails (backend)
+- [x] Adicionado companyCNPJ à interface AssessmentResultsData (frontend)
+- [x] Adicionado companyCNPJ ao reportData (frontend)
+- [x] Adicionado companyCNPJ à interface ReportData (PDF)
+- [x] Renderização de CNPJ no PDF gerado
+- [x] Todos os 216 testes passando
+- [x] PDF agora exibe: Empresa (Nome), CNPJ, Avaliação, Total de Respondentes

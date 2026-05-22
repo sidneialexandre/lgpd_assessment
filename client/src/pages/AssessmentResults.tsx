@@ -27,7 +27,8 @@ interface AssessmentResultsData {
     isCompleted: number;
     createdAt: Date;
   };
-  companyName: string;  // Tornar obrigatório
+  companyName: string;
+  companyCNPJ?: string;
   groups: GroupResult[];
   totalRespondents: number;
   completedRespondents: number;
@@ -107,10 +108,13 @@ export default function AssessmentResults() {
     const pillarCompliance = calculatePillarCompliance(data.groups || []);
     
     const finalCompanyName = data.companyName || `Empresa ${data.assessment.companyId}`;
+    const finalCompanyCNPJ = data.companyCNPJ || '';
     console.log('[DOWNLOAD PDF] finalCompanyName:', finalCompanyName);
+    console.log('[DOWNLOAD PDF] finalCompanyCNPJ:', finalCompanyCNPJ);
     
     const reportData = {
       companyName: finalCompanyName,
+      companyCNPJ: finalCompanyCNPJ,
       assessmentNumber: data.assessment.assessmentNumber,
       totalScore: data.assessment.totalScore,
       compliancePercentage: compliancePercent,

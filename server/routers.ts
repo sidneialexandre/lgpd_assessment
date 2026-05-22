@@ -343,15 +343,21 @@ export const appRouter = router({
           ? String(companyInfo.razaoSocial)
           : `Empresa ${assessment.companyId}`;
         
+        const finalCompanyCNPJ = companyInfo?.cnpj 
+          ? String(companyInfo.cnpj)
+          : '';
+        
         console.log('[getWithDetails] === RETORNANDO DADOS ===');
         console.log('[getWithDetails] companyInfo:', companyInfo);
         console.log('[getWithDetails] finalCompanyName:', finalCompanyName);
+        console.log('[getWithDetails] finalCompanyCNPJ:', finalCompanyCNPJ);
         console.log('[getWithDetails] assessment.companyId:', assessment.companyId);
         console.log('[getWithDetails] groups count:', groupStats.length);
 
         return {
           assessment,
           companyName: finalCompanyName,
+          companyCNPJ: finalCompanyCNPJ,
           totalRespondents: totalExpectedRespondents,
           completedRespondents: completedSessions.length,
           pendingRespondents: totalPendingRespondents,

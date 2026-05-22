@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 
 export interface ReportData {
   companyName: string;
+  companyCNPJ?: string;
   assessmentNumber: number;
   totalScore: number;
   compliancePercentage: number;
@@ -73,14 +74,17 @@ export async function generatePDFReport(data: ReportData) {
     // Company Info
     pdf.setTextColor(0, 0, 0);
     pdf.setFillColor(243, 244, 246); // #f3f4f6
-    pdf.rect(10, yPosition - 2, pageWidth - 20, 40, 'F');
+    pdf.rect(10, yPosition - 2, pageWidth - 20, 50, 'F');
     yPosition = addWrappedText('Informações da Empresa', 15, yPosition + 3, pageWidth - 30, 12, true);
     
-    // Validate companyName
+    // Validate companyName and CNPJ
     const displayCompanyName = data.companyName && data.companyName.trim() ? data.companyName : 'Empresa desconhecida';
+    const displayCNPJ = data.companyCNPJ && data.companyCNPJ.trim() ? data.companyCNPJ : 'CNPJ não informado';
     console.log('[PDF] Display company name:', displayCompanyName, 'original:', data.companyName);
+    console.log('[PDF] Display CNPJ:', displayCNPJ, 'original:', data.companyCNPJ);
     
     yPosition = addWrappedText(`Empresa: ${displayCompanyName}`, 15, yPosition + 2, pageWidth - 30, 10);
+    yPosition = addWrappedText(`CNPJ: ${displayCNPJ}`, 15, yPosition + 2, pageWidth - 30, 10);
     yPosition = addWrappedText(`Avaliação: Avaliação ${data.assessmentNumber}`, 15, yPosition + 2, pageWidth - 30, 10);
     yPosition = addWrappedText(`Total de Respondentes: ${data.completedRespondents} de ${data.totalRespondents}`, 15, yPosition + 2, pageWidth - 30, 10);
     yPosition += 10;
