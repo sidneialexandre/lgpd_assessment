@@ -261,6 +261,7 @@ export const appRouter = router({
       .output(z.object({
         assessment: z.any(),
         companyName: z.string(),
+        companyCNPJ: z.string().optional(),
         totalRespondents: z.number(),
         completedRespondents: z.number(),
         pendingRespondents: z.number(),
@@ -347,12 +348,7 @@ export const appRouter = router({
           ? String(companyInfo.cnpj)
           : '';
         
-        console.log('[getWithDetails] === RETORNANDO DADOS ===');
-        console.log('[getWithDetails] companyInfo:', companyInfo);
-        console.log('[getWithDetails] finalCompanyName:', finalCompanyName);
-        console.log('[getWithDetails] finalCompanyCNPJ:', finalCompanyCNPJ);
-        console.log('[getWithDetails] assessment.companyId:', assessment.companyId);
-        console.log('[getWithDetails] groups count:', groupStats.length);
+
 
         return {
           assessment,

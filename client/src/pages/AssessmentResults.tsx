@@ -94,11 +94,6 @@ export default function AssessmentResults() {
     if (!resultsQuery.data) return;
 
     const data = resultsQuery.data;
-    console.log('[DOWNLOAD PDF] === INICIANDO DOWNLOAD ===');
-    console.log('[DOWNLOAD PDF] data.companyName:', data.companyName, 'type:', typeof data.companyName);
-    console.log('[DOWNLOAD PDF] data.assessment.companyId:', data.assessment.companyId);
-    console.log('[DOWNLOAD PDF] data.groups:', data.groups);
-    console.log('[DOWNLOAD PDF] Dados completos da query:', JSON.stringify(data, null, 2));
     
     const compliancePercent = typeof data.assessment.compliancePercentage === "string"
       ? parseFloat(data.assessment.compliancePercentage)
@@ -109,8 +104,6 @@ export default function AssessmentResults() {
     
     const finalCompanyName = data.companyName || `Empresa ${data.assessment.companyId}`;
     const finalCompanyCNPJ = data.companyCNPJ || '';
-    console.log('[DOWNLOAD PDF] finalCompanyName:', finalCompanyName);
-    console.log('[DOWNLOAD PDF] finalCompanyCNPJ:', finalCompanyCNPJ);
     
     const reportData = {
       companyName: finalCompanyName,

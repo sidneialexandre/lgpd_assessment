@@ -25,18 +25,7 @@ export interface ReportData {
 
 export async function generatePDFReport(data: ReportData) {
   try {
-    console.log('[PDF] === INICIANDO GERAÇÃO DE PDF ===');
-    console.log('[PDF] Dados recebidos:', {
-      companyName: data.companyName,
-      companyNameType: typeof data.companyName,
-      companyNameLength: data.companyName?.length,
-      assessmentNumber: data.assessmentNumber,
-      totalScore: data.totalScore,
-      compliancePercentage: data.compliancePercentage,
-      groupsCount: data.groups?.length,
-      pillarsCount: data.pillars?.length,
-    });
-    console.log('[PDF] Dados completos:', JSON.stringify(data, null, 2));
+
     
     // Create PDF directly without html2canvas to avoid gradient issues
     const pdf = new jsPDF({
@@ -80,8 +69,6 @@ export async function generatePDFReport(data: ReportData) {
     // Validate companyName and CNPJ
     const displayCompanyName = data.companyName && data.companyName.trim() ? data.companyName : 'Empresa desconhecida';
     const displayCNPJ = data.companyCNPJ && data.companyCNPJ.trim() ? data.companyCNPJ : 'CNPJ não informado';
-    console.log('[PDF] Display company name:', displayCompanyName, 'original:', data.companyName);
-    console.log('[PDF] Display CNPJ:', displayCNPJ, 'original:', data.companyCNPJ);
     
     yPosition = addWrappedText(`Empresa: ${displayCompanyName}`, 15, yPosition + 2, pageWidth - 30, 10);
     yPosition = addWrappedText(`CNPJ: ${displayCNPJ}`, 15, yPosition + 2, pageWidth - 30, 10);
