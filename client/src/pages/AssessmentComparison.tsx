@@ -123,8 +123,8 @@ export default function AssessmentComparison() {
               <Card className="p-6">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Mudança na Conformidade</h3>
                 <div className={`text-3xl font-bold ${getImprovementColor(improvement?.complianceChange || 0)}`}>
-                  {getImprovementIcon(improvement?.complianceChange || 0)}
-                  {improvement?.complianceChange?.toFixed(2)}%
+                {getImprovementIcon(improvement?.complianceChange || 0)}
+                {(typeof improvement?.complianceChange === 'number' ? improvement.complianceChange : 0).toFixed(2)}%
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
                   {improvement?.complianceChange && improvement.complianceChange > 0
@@ -138,8 +138,8 @@ export default function AssessmentComparison() {
               <Card className="p-6">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Mudança na Pontuação</h3>
                 <div className={`text-3xl font-bold ${getImprovementColor(improvement?.scoreChange || 0)}`}>
-                  {getImprovementIcon(improvement?.scoreChange || 0)}
-                  {improvement?.scoreChange?.toFixed(0)} pts
+                {getImprovementIcon(improvement?.scoreChange || 0)}
+                {(typeof improvement?.scoreChange === 'number' ? improvement.scoreChange : 0).toFixed(0)} pts
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
                   Ciclo 1: {comparisonData.assessment1.totalScore} pts | Ciclo 2: {comparisonData.assessment2.totalScore} pts
