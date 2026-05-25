@@ -292,6 +292,13 @@ export const appRouter = router({
         
         const company = await db.select().from(companies).where(eq(companies.id, companyId)).limit(1);
         const companyInfo = company && company.length > 0 ? company[0] : null;
+        
+        // Debug: Log company info retrieval
+        if (!companyInfo) {
+          console.warn(`[getWithDetails] Company not found for companyId: ${companyId}`);
+        } else {
+          console.log(`[getWithDetails] Company found: ${companyInfo.razaoSocial} (${companyInfo.cnpj})`);
+        }
 
         const sessions = await getAssessmentRespondentSessions(input.assessmentId);
         const completedSessions = sessions.filter(s => s.isCompleted === 1);

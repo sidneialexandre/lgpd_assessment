@@ -102,8 +102,18 @@ export default function AssessmentResults() {
     // Calcular conformidade por pilar
     const pillarCompliance = calculatePillarCompliance(data.groups || []);
     
-    const finalCompanyName = data.companyName || `Empresa ${data.assessment.companyId}`;
-    const finalCompanyCNPJ = data.companyCNPJ || '';
+    // Se companyName estiver vazio ou for apenas "Empresa XXX", tenta recuperar do banco
+    let finalCompanyName = data.companyName;
+    let finalCompanyCNPJ = data.companyCNPJ;
+    
+    // Fallback: se não temos dados da empresa, usa ID como placeholder
+    if (!finalCompanyName || finalCompanyName.startsWith('Empresa ')) {
+      finalCompanyName = data.companyName || `Empresa ${data.assessment.companyId}`;
+    }
+    
+    if (!finalCompanyCNPJ) {
+      finalCompanyCNPJ = '';
+    }
     
     const reportData = {
       companyName: finalCompanyName,

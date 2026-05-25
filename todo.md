@@ -1019,3 +1019,11 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Implementar exportação de comparação para JSON
 - [x] Adicionar botões de exportação na página AssessmentComparison
 - [x] Criar hook useExportData para exportação de dados
+
+
+## Problema em Investigação - Dados da Empresa no PDF
+
+- [ ] Investigar por que dados da empresa (razaoSocial e CNPJ) não estão sendo incluídos no PDF
+- [ ] Verificar se os dados estão sendo salvos corretamente no banco de dados
+- [ ] Adicionar logs para rastrear o fluxo de dados da empresa até a geração do PDF
+- [ ] Testar se a query getWithDetails está retornando os dados da empresa corretamente
