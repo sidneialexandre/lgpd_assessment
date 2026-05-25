@@ -1009,3 +1009,13 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Criar visualização de tendências (melhoria/piora com ícones e cores)
 - [x] Adicionar rota /assessment-comparison ao App.tsx
 - [x] Testar a funcionalidade de comparação - 216 testes passando
+
+
+## Novas Funcionalidades - Sessão Atual
+
+- [x] Implementar mascaramento de CNPJ com formatação automática (XX.XXX.XXX/XXXX-XX) - Já existia em CompanySetup.tsx
+- [x] Criar hook reutilizável useCNPJFormatter com validação de CNPJ
+- [x] Implementar exportação de comparação para CSV
+- [x] Implementar exportação de comparação para JSON
+- [x] Adicionar botões de exportação na página AssessmentComparison
+- [x] Criar hook useExportData para exportação de dados

@@ -5,12 +5,14 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { ArrowUp, ArrowDown, TrendingUp } from 'lucide-react';
+import { ArrowUp, ArrowDown, TrendingUp, Download, FileJson } from 'lucide-react';
+import { useExportData } from '@/hooks/useExportData';
 
 export default function AssessmentComparison() {
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [selectedAssessment1, setSelectedAssessment1] = useState<number | null>(null);
   const [selectedAssessment2, setSelectedAssessment2] = useState<number | null>(null);
+  const { exportToCSV, exportToJSON } = useExportData();
 
   // Get assessment history for the company
   const historyQuery = trpc.assessment.getAssessmentHistory.useQuery(
@@ -45,6 +47,55 @@ export default function AssessmentComparison() {
     if (value > 0) return 'text-green-600';
     if (value < 0) return 'text-red-600';
     return 'text-gray-600';
+  };
+
+  const handleExportCSV = () => {
+    if (!comparisonData) return;
+
+    const exportData = [
+      {
+        'Métrica': 'Conformidade (%)',
+        'Ciclo 1': (comparisonData.assessment1.compliancePercentage || 0).toFixed(2),
+        'Ciclo 2': (comparisonData.assessment2.compliancePercentage || 0).toFixed(2),
+        'Mudança': (improvement?.complianceChange || 0).toFixed(2),
+      },
+      {
+        'Métrica': 'Pontuação Total',
+        'Ciclo 1': comparisonData.assessment1.totalScore,
+        'Ciclo 2': comparisonData.assessment2.totalScore,
+        'Mudança': improvement?.scoreChange || 0,
+      },
+    ];
+
+    exportToCSV(exportData, `comparacao-ciclos-${companyId}`);
+  };
+
+  const handleExportJSON = () => {
+    if (!comparisonData) return;
+
+    const exportData = {
+      companyId,
+      assessment1: {
+        id: comparisonData.assessment1.id,
+        ciclo: comparisonData.assessment1.assessmentNumber,
+        data: new Date(comparisonData.assessment1.createdAt).toLocaleDateString('pt-BR'),
+        conformidade: (comparisonData.assessment1.compliancePercentage || 0).toFixed(2),
+        pontuacao: comparisonData.assessment1.totalScore,
+      },
+      assessment2: {
+        id: comparisonData.assessment2.id,
+        ciclo: comparisonData.assessment2.assessmentNumber,
+        data: new Date(comparisonData.assessment2.createdAt).toLocaleDateString('pt-BR'),
+        conformidade: (comparisonData.assessment2.compliancePercentage || 0).toFixed(2),
+        pontuacao: comparisonData.assessment2.totalScore,
+      },
+      improvement: {
+        conformidade: (improvement?.complianceChange || 0).toFixed(2),
+        pontuacao: improvement?.scoreChange || 0,
+      },
+    };
+
+    exportToJSON(exportData, `comparacao-ciclos-${companyId}`);
   };
 
   const getImprovementIcon = (value: number) => {
@@ -189,10 +240,33 @@ export default function AssessmentComparison() {
                 </table>
               </div>
             </Card>
+
+          {/* Export Buttons */}
+          <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">Exportar Dados</h3>
+            <div className="flex gap-4 flex-wrap">
+              <Button
+                onClick={handleExportCSV}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Exportar como CSV
+              </Button>
+              <Button
+                onClick={handleExportJSON}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <FileJson className="w-4 h-4" />
+                Exportar como JSON
+              </Button>
+            </div>
+          </Card>
           </>
         )}
 
-        {/* Timeline Chart */}
+        {/* Compliance Evolution Chart */}
         {chartData.length > 1 && (
           <Card className="p-6 mb-6">
             <h3 className="text-lg font-semibold mb-4">Evolução da Conformidade</h3>
