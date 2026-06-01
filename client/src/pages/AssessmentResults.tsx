@@ -87,13 +87,20 @@ export default function AssessmentResults() {
 
   const resultsQuery = trpc.assessment.getWithDetails.useQuery(
     { assessmentId: assessmentId || 0 },
-    { enabled: !!assessmentId }
+    { enabled: !!assessmentId, staleTime: 0, gcTime: 0 }
   );
 
-  const handleDownloadPDF = () => {
-    if (!resultsQuery.data) return;
+  const handleDownloadPDF = async () => {
+    const freshResult = await resultsQuery.refetch();
+    if (!freshResult.data) return;
 
-    const data = resultsQuery.data;
+    const data = freshResult.data;
+    
+    console.log('[PDF] Company data:', {
+      companyName: data.companyName,
+      companyCNPJ: data.companyCNPJ,
+      companyId: data.assessment.companyId,
+    });
     
     const compliancePercent = typeof data.assessment.compliancePercentage === "string"
       ? parseFloat(data.assessment.compliancePercentage)

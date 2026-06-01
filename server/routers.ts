@@ -287,12 +287,17 @@ export const appRouter = router({
         // Convert companyId to number for comparison
         const companyId = typeof assessment.companyId === 'string' ? parseInt(assessment.companyId, 10) : assessment.companyId;
         
+        console.log('[getWithDetails] Assessment companyId:', { raw: assessment.companyId, normalized: companyId, type: typeof companyId });
+        
         if (!db) {
+          console.error('[getWithDetails] Database not available');
           return null;
         }
         
         const company = await db.select().from(companies).where(eq(companies.id, companyId)).limit(1);
         const companyInfo = company && company.length > 0 ? company[0] : null;
+        
+        console.log('[getWithDetails] Company query result:', { found: !!companyInfo, companyInfo });
         
 
 
@@ -351,7 +356,12 @@ export const appRouter = router({
         const finalCompanyName = companyInfo.razaoSocial || `Empresa ${companyId}`;
         const finalCompanyCNPJ = companyInfo.cnpj || '';
         
-        console.log(`[getWithDetails] Returning: ${finalCompanyName} (${finalCompanyCNPJ})`);
+        console.log(`[getWithDetails] Final company data:`, {
+          razaoSocial: companyInfo.razaoSocial,
+          cnpj: companyInfo.cnpj,
+          finalCompanyName,
+          finalCompanyCNPJ,
+        });
         
 
 
