@@ -55,8 +55,8 @@ export default function AssessmentComparison() {
     const exportData = [
       {
         'Métrica': 'Conformidade (%)',
-        'Ciclo 1': (comparisonData.assessment1.compliancePercentage || 0).toFixed(2),
-        'Ciclo 2': (comparisonData.assessment2.compliancePercentage || 0).toFixed(2),
+        'Ciclo 1': (typeof comparisonData.assessment1.compliancePercentage === 'number' ? comparisonData.assessment1.compliancePercentage : 0).toFixed(2),
+        'Ciclo 2': (typeof comparisonData.assessment2.compliancePercentage === 'number' ? comparisonData.assessment2.compliancePercentage : 0).toFixed(2),
         'Mudança': (improvement?.complianceChange || 0).toFixed(2),
       },
       {
@@ -79,14 +79,14 @@ export default function AssessmentComparison() {
         id: comparisonData.assessment1.id,
         ciclo: comparisonData.assessment1.assessmentNumber,
         data: new Date(comparisonData.assessment1.createdAt).toLocaleDateString('pt-BR'),
-        conformidade: (comparisonData.assessment1.compliancePercentage || 0).toFixed(2),
+        conformidade: (typeof comparisonData.assessment1.compliancePercentage === 'number' ? comparisonData.assessment1.compliancePercentage : 0).toFixed(2),
         pontuacao: comparisonData.assessment1.totalScore,
       },
       assessment2: {
         id: comparisonData.assessment2.id,
         ciclo: comparisonData.assessment2.assessmentNumber,
         data: new Date(comparisonData.assessment2.createdAt).toLocaleDateString('pt-BR'),
-        conformidade: (comparisonData.assessment2.compliancePercentage || 0).toFixed(2),
+        conformidade: (typeof comparisonData.assessment2.compliancePercentage === 'number' ? comparisonData.assessment2.compliancePercentage : 0).toFixed(2),
         pontuacao: comparisonData.assessment2.totalScore,
       },
       improvement: {
@@ -214,8 +214,8 @@ export default function AssessmentComparison() {
                   <tbody>
                     <tr className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4 text-gray-700">Conformidade (%)</td>
-                      <td className="text-center py-3 px-4">{(comparisonData.assessment1.compliancePercentage || 0).toFixed(2)}%</td>
-                      <td className="text-center py-3 px-4">{(comparisonData.assessment2.compliancePercentage || 0).toFixed(2)}%</td>
+                      <td className="text-center py-3 px-4">{(typeof comparisonData.assessment1.compliancePercentage === 'number' ? comparisonData.assessment1.compliancePercentage : 0).toFixed(2)}%</td>
+                      <td className="text-center py-3 px-4">{(typeof comparisonData.assessment2.compliancePercentage === 'number' ? comparisonData.assessment2.compliancePercentage : 0).toFixed(2)}%</td>
                       <td className={`text-center py-3 px-4 font-semibold ${getImprovementColor(improvement?.complianceChange || 0)}`}>
                         {getImprovementIcon(improvement?.complianceChange || 0)}
                         {(improvement?.complianceChange || 0).toFixed(2)}%

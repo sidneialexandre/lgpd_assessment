@@ -108,11 +108,26 @@ export async function createCompany(userId: number, cnpj: string, razaoSocial: s
     razaoSocial,
   });
 
+  let insertId: number | undefined;
+  if (Array.isArray(result) && result[0]) {
+    insertId = Number((result[0] as any).insertId);
+  } else if ((result as any).insertId) {
+    insertId = Number((result as any).insertId);
+  }
+
+  if (!insertId || isNaN(insertId)) {
+    throw new Error(`Failed to get insertId from company creation`);
+  }
+
   const company = await db
     .select()
     .from(companies)
-    .where(eq(companies.id, Number(result[0].insertId)))
+    .where(eq(companies.id, insertId))
     .limit(1);
+
+  if (!company || company.length === 0) {
+    throw new Error(`Failed to retrieve created company with id: ${insertId}`);
+  }
 
   return company[0];
 }

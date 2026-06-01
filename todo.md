@@ -1023,7 +1023,9 @@ Aplicação pronta para publicação com PDF corrigido
 
 ## Problema em Investigação - Dados da Empresa no PDF
 
-- [ ] Investigar por que dados da empresa (razaoSocial e CNPJ) não estão sendo incluídos no PDF
-- [ ] Verificar se os dados estão sendo salvos corretamente no banco de dados
-- [ ] Adicionar logs para rastrear o fluxo de dados da empresa até a geração do PDF
-- [ ] Testar se a query getWithDetails está retornando os dados da empresa corretamente
+- [x] Investigar por que dados da empresa (razaoSocial e CNPJ) não estão sendo incluídos no PDF
+- [x] Verificar se os dados estão sendo salvos corretamente no banco de dados
+- [x] Identificar problema com insertId em createCompany (Drizzle mysql2)
+- [x] Corrigir createCompany para extrair insertId corretamente
+- [x] Corrigir getWithDetails para usar companyId normalizado em todas as chamadas
+- [x] Adicionar validação para garantir que company é encontrada

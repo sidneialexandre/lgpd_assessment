@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { callDataApi } from "./_core/dataApi";
 import { sendEmail } from "./_core/emailService";
 import { z } from "zod";
@@ -293,12 +294,7 @@ export const appRouter = router({
         const company = await db.select().from(companies).where(eq(companies.id, companyId)).limit(1);
         const companyInfo = company && company.length > 0 ? company[0] : null;
         
-        // Debug: Log company info retrieval
-        if (!companyInfo) {
-          console.warn(`[getWithDetails] Company not found for companyId: ${companyId}`);
-        } else {
-          console.log(`[getWithDetails] Company found: ${companyInfo.razaoSocial} (${companyInfo.cnpj})`);
-        }
+
 
         const sessions = await getAssessmentRespondentSessions(input.assessmentId);
         const completedSessions = sessions.filter(s => s.isCompleted === 1);
@@ -307,7 +303,7 @@ export const appRouter = router({
         const uniqueGroupIds = Array.from(new Set(sessions.map(s => s.groupId)));
         
         // Get all groups for the company
-        const allGroups = await getCompanyGroups(assessment.companyId);
+        const allGroups = await getCompanyGroups(companyId);
         
         // Filter to only groups used in this assessment
         const groups = allGroups.filter(g => uniqueGroupIds.includes(g.id));
@@ -347,13 +343,15 @@ export const appRouter = router({
         const totalPendingRespondents = totalExpectedRespondents - completedSessions.length;
         
         // Ensure companyName is always set correctly
-        const finalCompanyName = companyInfo?.razaoSocial 
-          ? String(companyInfo.razaoSocial)
-          : `Empresa ${assessment.companyId}`;
+        if (!companyInfo) {
+          console.error(`[getWithDetails] Company not found for companyId: ${companyId}`);
+          throw new Error(`Company not found for assessment`);
+        }
         
-        const finalCompanyCNPJ = companyInfo?.cnpj 
-          ? String(companyInfo.cnpj)
-          : '';
+        const finalCompanyName = companyInfo.razaoSocial || `Empresa ${companyId}`;
+        const finalCompanyCNPJ = companyInfo.cnpj || '';
+        
+        console.log(`[getWithDetails] Returning: ${finalCompanyName} (${finalCompanyCNPJ})`);
         
 
 
