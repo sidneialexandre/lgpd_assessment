@@ -159,7 +159,8 @@ export default function AssessmentAdmin() {
         : data.assessment.compliancePercentage;
 
       const reportData = {
-        companyName: "Empresa " + data.assessment.companyId,
+        companyName: data.companyName || ("Empresa " + data.assessment.companyId),
+        companyCNPJ: data.companyCNPJ || "",
         assessmentNumber: data.assessment.assessmentNumber,
         totalScore: data.assessment.totalScore,
         compliancePercentage: compliancePercent,
