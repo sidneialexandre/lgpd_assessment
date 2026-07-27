@@ -365,7 +365,7 @@ export const appRouter = router({
         
 
 
-        return {
+        const result = {
           assessment,
           companyName: finalCompanyName,
           companyCNPJ: finalCompanyCNPJ,
@@ -376,6 +376,15 @@ export const appRouter = router({
           completedSessions,
           groups: groupStats,
         };
+        
+        console.log('[getWithDetails] RESULTADO FINAL A RETORNAR:', {
+          companyName: result.companyName,
+          companyCNPJ: result.companyCNPJ,
+          assessmentId: result.assessment.id,
+          assessmentCompanyId: result.assessment.companyId,
+        });
+        
+        return result;
       }),
 
     finalize: protectedProcedure
