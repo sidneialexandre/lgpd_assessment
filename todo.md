@@ -1029,3 +1029,12 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Corrigir createCompany para extrair insertId corretamente
 - [x] Corrigir getWithDetails para usar companyId normalizado em todas as chamadas
 - [x] Adicionar validação para garantir que company é encontrada
+
+
+## Gráficos no Relatório PDF
+
+- [x] Instalar biblioteca chart.js e canvas para gerar gráficos
+- [x] Criar função para gerar gráfico de barras com pontuação por departamento
+- [x] Criar função para gerar gráfico de pizza com percentual de conformidade por departamento
+- [x] Integrar gráficos ao PDFReportGenerator
+- [x] Testar gráficos no PDF gerado - Todos os 216 testes passando

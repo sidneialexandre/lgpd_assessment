@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { generateScoreChart, generateComplianceChart } from '@/utils/chartGenerator';
 
 export interface ReportData {
   companyName: string;
@@ -192,6 +193,34 @@ export async function generatePDFReport(data: ReportData) {
         
         yPosition += 15;
       }
+    }
+    
+    // Charts Section
+    yPosition += 10;
+    if (yPosition > pageHeight - 100) {
+      pdf.addPage();
+      yPosition = 20;
+    }
+    
+    try {
+      // Generate and add score chart
+      const scoreChartImage = await generateScoreChart(data.groups);
+      pdf.addImage(scoreChartImage, 'PNG', 10, yPosition, pageWidth - 20, 80);
+      yPosition += 90;
+      
+      // Check if we need a new page
+      if (yPosition > pageHeight - 100) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      
+      // Generate and add compliance chart
+      const complianceChartImage = await generateComplianceChart(data.groups);
+      pdf.addImage(complianceChartImage, 'PNG', 10, yPosition, pageWidth - 20, 80);
+      yPosition += 90;
+    } catch (chartError) {
+      console.warn('[PDF] Erro ao gerar gráficos:', chartError);
+      // Continue without charts if there's an error
     }
     
     // Info Section
