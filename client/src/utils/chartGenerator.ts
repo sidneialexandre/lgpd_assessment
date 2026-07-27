@@ -1,6 +1,7 @@
 import { Chart, registerables } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-Chart.register(...registerables);
+Chart.register(...registerables, ChartDataLabels);
 
 interface GroupData {
   groupName: string;
@@ -48,6 +49,19 @@ export async function generateScoreChart(groups: GroupData[]): Promise<string> {
           text: 'Pontuação Total por Departamento',
           font: { size: 16, weight: 'bold' },
         },
+        datalabels: {
+          display: true,
+          anchor: 'end',
+          align: 'top',
+          font: {
+            weight: 'bold',
+            size: 11,
+          },
+          color: '#000',
+          formatter: (value: any) => {
+            return value ? value.toLocaleString('pt-BR') : '0';
+          },
+        } as any,
       },
       scales: {
         y: {
@@ -65,7 +79,7 @@ export async function generateScoreChart(groups: GroupData[]): Promise<string> {
 }
 
 /**
- * Gera um gráfico de pizza com percentual de conformidade por departamento
+ * Gera um gráfico de rosca com percentual de conformidade por departamento
  */
 export async function generateComplianceChart(groups: GroupData[]): Promise<string> {
   const canvas = document.createElement('canvas');
@@ -89,7 +103,8 @@ export async function generateComplianceChart(groups: GroupData[]): Promise<stri
           data: groups.map(g => g.compliancePercentage),
           backgroundColor: colors.slice(0, groups.length),
           borderColor: '#fff',
-          borderWidth: 2,
+          borderWidth: 1,
+          spacing: 0,
         },
       ],
     },
@@ -106,6 +121,17 @@ export async function generateComplianceChart(groups: GroupData[]): Promise<stri
           text: 'Conformidade por Departamento (%)',
           font: { size: 16, weight: 'bold' },
         },
+        datalabels: {
+          display: true,
+          color: '#fff',
+          font: {
+            weight: 'bold',
+            size: 12,
+          },
+          formatter: (value: any) => {
+            return value ? value.toFixed(1) + '%' : '0%';
+          },
+        } as any,
       },
     },
   });

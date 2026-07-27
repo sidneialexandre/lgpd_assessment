@@ -1038,3 +1038,6 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Criar função para gerar gráfico de pizza com percentual de conformidade por departamento
 - [x] Integrar gráficos ao PDFReportGenerator
 - [x] Testar gráficos no PDF gerado - Todos os 216 testes passando
+- [x] Ajustar gráfico de barras para incluir valores como labels
+- [x] Ajustar gráfico de pizza para layout rosca com % como labels e sem espaços entre séries
+- [x] Instalar chartjs-plugin-datalabels para exibir labels nos gráficos
