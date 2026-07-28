@@ -29,8 +29,8 @@ export async function generateScoreChart(groups: GroupData[]): Promise<string> {
         {
           label: 'Pontuação Total',
           data: groups.map(g => g.totalScore),
-          backgroundColor: '#3b82f6',
-          borderColor: '#1e40af',
+          backgroundColor: '#1e40af',
+          borderColor: '#0f172a',
           borderWidth: 1,
         },
       ],
@@ -89,9 +89,14 @@ export async function generateComplianceChart(groups: GroupData[]): Promise<stri
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not get canvas context');
 
+  // Paleta de cores corporativas - tons azuis, verdes e cinzas profissionais
   const colors = [
-    '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
-    '#8b5cf6', '#ec4899', '#14b8a6', '#f97316',
+    '#1e40af', // Azul escuro corporativo
+    '#0369a1', // Azul médio
+    '#0891b2', // Azul-verde corporativo
+    '#059669', // Verde corporativo
+    '#7c3aed', // Roxo corporativo
+    '#6366f1', // Índigo corporativo
   ];
 
   new Chart(ctx, {

@@ -1041,3 +1041,11 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Ajustar gráfico de barras para incluir valores como labels
 - [x] Ajustar gráfico de pizza para layout rosca com % como labels e sem espaços entre séries
 - [x] Instalar chartjs-plugin-datalabels para exibir labels nos gráficos
+
+
+## Melhorias do Relatório PDF
+
+- [x] Atualizar paleta de cores dos gráficos para tons corporativos (azul, verde, roxo)
+- [x] Adicionar tabela de dados detalhada com informações por departamento
+- [x] Adicionar campo de conclusão/observações no final do PDF
+- [x] Testar e validar todas as mudanças - Todos os 216 testes passando

@@ -22,6 +22,7 @@ export interface ReportData {
     compliancePercentage: number;
   }>;
   generatedAt: Date;
+  conclusions?: string;
 }
 
 export async function generatePDFReport(data: ReportData) {
@@ -223,7 +224,96 @@ export async function generatePDFReport(data: ReportData) {
       // Continue without charts if there's an error
     }
     
-    // Info Section
+    // Data Table Section
+    yPosition += 10;
+    if (yPosition > pageHeight - 80) {
+      pdf.addPage();
+      yPosition = 20;
+    }
+    
+    pdf.setTextColor(0, 0, 0);
+    yPosition = addWrappedText('Dados Detalhados por Departamento', 15, yPosition, pageWidth - 30, 12, true);
+    yPosition += 5;
+    
+    // Table header
+    const colWidth = (pageWidth - 30) / 4;
+    const rowHeight = 6;
+    
+    // Header row
+    pdf.setFillColor(30, 64, 175);
+    pdf.rect(10, yPosition, pageWidth - 20, rowHeight, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(9);
+    (pdf as any).setFont(undefined, 'bold');
+    
+    pdf.text('Departamento', 12, yPosition + 4);
+    pdf.text('Respondentes', 12 + colWidth, yPosition + 4);
+    pdf.text('Pontuação', 12 + colWidth * 2, yPosition + 4);
+    pdf.text('Conformidade', 12 + colWidth * 3, yPosition + 4);
+    
+    yPosition += rowHeight;
+    
+    // Data rows
+    pdf.setTextColor(0, 0, 0);
+    (pdf as any).setFont(undefined, 'normal');
+    pdf.setFontSize(8);
+    
+    let rowColor = true;
+    for (const group of data.groups) {
+      if (yPosition > pageHeight - 30) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      
+      if (rowColor) {
+        pdf.setFillColor(243, 244, 246);
+        pdf.rect(10, yPosition, pageWidth - 20, rowHeight, 'F');
+      }
+      
+      const compliance = group.compliancePercentage ? group.compliancePercentage.toFixed(1) : '0.0';
+      const score = group.totalScore ? group.totalScore.toLocaleString('pt-BR') : '0';
+      const respondents = `${group.completedCount}/${group.respondentCount}`;
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(group.departmentName, 12, yPosition + 4);
+      pdf.text(respondents, 12 + colWidth, yPosition + 4);
+      pdf.text(score, 12 + colWidth * 2, yPosition + 4);
+      pdf.text(compliance + '%', 12 + colWidth * 3, yPosition + 4);
+      
+      yPosition += rowHeight;
+      rowColor = !rowColor;
+    }
+    
+    // Conclusions Section
+    yPosition += 10;
+    if (yPosition > pageHeight - 50) {
+      pdf.addPage();
+      yPosition = 20;
+    }
+    
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(11);
+    (pdf as any).setFont(undefined, 'bold');
+    pdf.text('Conclusões e Observações', 15, yPosition);
+    yPosition += 8;
+    
+    // Conclusions box
+    pdf.setFillColor(249, 250, 251);
+    pdf.setDrawColor(200, 200, 200);
+    pdf.rect(10, yPosition, pageWidth - 20, 30, 'FD');
+    
+    pdf.setFontSize(10);
+    (pdf as any).setFont(undefined, 'normal');
+    pdf.setTextColor(100, 100, 100);
+    
+    if (data.conclusions && data.conclusions.trim()) {
+      const conclusionLines = pdf.splitTextToSize(data.conclusions, pageWidth - 30);
+      pdf.text(conclusionLines, 15, yPosition + 5);
+    } else {
+      pdf.text('Nenhuma conclusão adicionada.', 15, yPosition + 5);
+    }
+    
+        // Info Section
     yPosition += 5;
     if (yPosition > pageHeight - 40) {
       pdf.addPage();
