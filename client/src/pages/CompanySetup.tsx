@@ -8,12 +8,44 @@ import { AlertCircle, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface GroupData {
   groupName: string;
   departmentName: string;
   respondentCount: number;
 }
+
+const scoringCriteria = {
+  A: {
+    label: "A",
+    text: "Sim, certamente",
+    points: "100 pts",
+    color: "bg-green-500",
+    description: "A organização implementou completamente a medida de segurança ou conformidade. Há evidências documentadas, políticas formalizadas e controles operacionais em funcionamento."
+  },
+  B: {
+    label: "B",
+    text: "Sim",
+    points: "65 pts",
+    color: "bg-blue-500",
+    description: "A organização implementou parcialmente a medida. Existem políticas e controles, mas podem haver lacunas na documentação ou na aplicação consistente."
+  },
+  C: {
+    label: "C",
+    text: "Não",
+    points: "35 pts",
+    color: "bg-yellow-500",
+    description: "A organização não implementou a medida ou a implementação é mínima. Há poucas evidências de controles ou políticas formalizadas."
+  },
+  D: {
+    label: "D",
+    text: "Não sei",
+    points: "0 pts",
+    color: "bg-red-500",
+    description: "O respondente não tem informações suficientes para avaliar se a medida foi implementada. Nenhum ponto é atribuído neste caso."
+  }
+};
 
 export default function CompanySetup() {
   const { user, isAuthenticated } = useAuth();
@@ -287,19 +319,21 @@ export default function CompanySetup() {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-4 gap-4">
-              {[
-                { letter: "A", text: "Sim, certamente", points: "100 pts", color: "bg-green-500" },
-                { letter: "B", text: "Sim", points: "65 pts", color: "bg-blue-500" },
-                { letter: "C", text: "Não", points: "35 pts", color: "bg-yellow-500" },
-                { letter: "D", text: "Não sei", points: "0 pts", color: "bg-red-500" },
-              ].map((item) => (
-                <div key={item.letter} className="text-center p-4 bg-white rounded-lg border border-gray-200">
-                  <div className={`${item.color} w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3 text-white`}>
-                    {item.letter}
-                  </div>
-                  <p className="font-semibold text-gray-900 text-sm mb-1">{item.letter}) {item.text}</p>
-                  <p className="text-lg font-bold text-blue-600">{item.points}</p>
-                </div>
+              {Object.entries(scoringCriteria).map(([key, item]) => (
+                <Tooltip key={key}>
+                  <TooltipTrigger asChild>
+                    <div className="text-center p-4 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow cursor-help animate-slide-in-up">
+                      <div className={`${item.color} w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3 text-white`}>
+                        {item.label}
+                      </div>
+                      <p className="font-semibold text-gray-900 text-sm mb-1">{item.label}) {item.text}</p>
+                      <p className="text-lg font-bold text-blue-600">{item.points}</p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-sm">{item.description}</p>
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
             <div className="mt-6 p-4 bg-blue-100 rounded-lg border border-blue-300">

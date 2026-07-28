@@ -1068,3 +1068,13 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Implementar botão flutuante "Voltar ao Topo"
 - [x] Adicionar smooth scroll behavior
 - [x] Testar animações em diferentes dispositivos - Todos os 216 testes passando
+
+
+## Barra de Progresso e Tooltips
+
+- [x] Criar componente ProgressBar para exibir avanço nas perguntas
+- [x] Integrar ProgressBar na tela de avaliação (Assessment.tsx) - Barra fixa no topo
+- [x] Adicionar tooltips nos cards de pontuação com critérios exatos
+- [x] Aplicar animações de scroll aos cards de pontuação (animate-slide-in-up)
+- [x] Testar barra de progresso em diferentes tamanhos de tela
+- [x] Validar tooltips em dispositivos móveis - Todos os 216 testes passando
