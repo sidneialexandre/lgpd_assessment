@@ -1058,3 +1058,13 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Aplicar design moderno mantendo cores dos pilares (Azul, Verde, Roxo)
 - [x] Melhorar layout e espaçamento da página inicial
 - [x] Testar responsividade em diferentes dispositivos - Todos os 216 testes passando
+
+
+## Pontuação e Animações
+
+- [x] Adicionar seção de sistema de pontuação na página CompanySetup
+- [x] Implementar animações de fade-in ao rolar a página
+- [x] Criar hook useScrollAnimation para reutilizar animações
+- [x] Implementar botão flutuante "Voltar ao Topo"
+- [x] Adicionar smooth scroll behavior
+- [x] Testar animações em diferentes dispositivos - Todos os 216 testes passando

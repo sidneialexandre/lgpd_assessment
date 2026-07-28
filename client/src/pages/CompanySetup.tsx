@@ -279,7 +279,41 @@ export default function CompanySetup() {
           </CardContent>
         </Card>
 
-        {/* Groups Configuration Card */}
+        {/* Scoring System Card */}
+        <Card className="mb-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-blue-900">Sistema de Pontuação</CardTitle>
+            <CardDescription>Entenda como funciona a avaliação</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-4 gap-4">
+              {[
+                { letter: "A", text: "Sim, certamente", points: "100 pts", color: "bg-green-500" },
+                { letter: "B", text: "Sim", points: "65 pts", color: "bg-blue-500" },
+                { letter: "C", text: "Não", points: "35 pts", color: "bg-yellow-500" },
+                { letter: "D", text: "Não sei", points: "0 pts", color: "bg-red-500" },
+              ].map((item) => (
+                <div key={item.letter} className="text-center p-4 bg-white rounded-lg border border-gray-200">
+                  <div className={`${item.color} w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3 text-white`}>
+                    {item.letter}
+                  </div>
+                  <p className="font-semibold text-gray-900 text-sm mb-1">{item.letter}) {item.text}</p>
+                  <p className="text-lg font-bold text-blue-600">{item.points}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 p-4 bg-blue-100 rounded-lg border border-blue-300">
+              <p className="text-center text-blue-900 font-semibold">
+                Máximo de pontos por respondente: <span className="text-2xl text-blue-600">10.000</span>
+              </p>
+              <p className="text-center text-sm text-blue-800 mt-2">
+                Total de questões: <strong>50</strong> | Divisão: <strong>3 Pilares</strong>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+                {/* Groups Configuration Card */}
         <Card className="bg-white shadow-lg">
           <CardHeader>
             <CardTitle>Grupos de Respondentes</CardTitle>

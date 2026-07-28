@@ -21,6 +21,7 @@ import AssessmentComparison from "./pages/AssessmentComparison";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ScrollToTopButton } from "./components/ScrollToTopButton";
 
 // Protected route component for authenticated users only
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -176,6 +177,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <ScrollToTopButton />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
