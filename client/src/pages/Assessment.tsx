@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ProgressBar } from "@/components/ProgressBar";
+import { ReviewScreen } from "@/components/ReviewScreen";
 
 // Function to get colors based on pillar name
 function getPillarColors(pillarName: string) {
@@ -53,8 +54,10 @@ export default function Assessment() {
     respondentsRemaining?: number;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [autoSaveIndicator, setAutoSaveIndicator] = useState<'saved' | 'saving' | null>(null);
 
-  // Prevent data loss on page unload if assessment is incomplete
+// Prevent data loss on page unload if assessment is incomplete
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!isCompleted && Object.keys(answers).length > 0) {
@@ -124,6 +127,43 @@ export default function Assessment() {
     { enabled: !!resolvedAssessmentId, refetchInterval: 2000 }
   );
 
+  // Auto-save to localStorage
+  useEffect(() => {
+    if (Object.keys(answers).length > 0 && !isCompleted) {
+      setAutoSaveIndicator('saving');
+      const timer = setTimeout(() => {
+        const assessmentKey = `assessment_${resolvedSessionId}_${resolvedAssessmentId}`;
+        localStorage.setItem(assessmentKey, JSON.stringify({
+          answers,
+          currentQuestionIndex,
+          timestamp: new Date().toISOString(),
+        }));
+        setAutoSaveIndicator('saved');
+        setTimeout(() => setAutoSaveIndicator(null), 2000);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [answers, currentQuestionIndex, isCompleted, resolvedSessionId, resolvedAssessmentId]);
+
+  // Recover from localStorage on mount
+  useEffect(() => {
+    if (resolvedSessionId && resolvedAssessmentId) {
+      const assessmentKey = `assessment_${resolvedSessionId}_${resolvedAssessmentId}`;
+      const saved = localStorage.getItem(assessmentKey);
+      if (saved) {
+        try {
+          const { answers: savedAnswers, currentQuestionIndex: savedIndex } = JSON.parse(saved);
+          setAnswers(savedAnswers);
+          setCurrentQuestionIndex(savedIndex);
+        } catch (e) {
+          console.error('Failed to recover assessment:', e);
+        }
+      }
+    }
+  }, [resolvedSessionId, resolvedAssessmentId]);
+
+  
+
   const saveAnswersMutation = trpc.respondent.saveAnswers.useMutation();
 
   const currentQuestion = QUESTIONS[currentQuestionIndex];
@@ -135,6 +175,13 @@ export default function Assessment() {
       ...prev,
       [currentQuestion.id]: answer,
     }));
+    
+    // Auto-advance to next question after 500ms delay
+    if (currentQuestionIndex < QUESTIONS.length - 1) {
+      setTimeout(() => {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      }, 500);
+    }
   };
 
   const handleNextQuestion = () => {
@@ -154,10 +201,24 @@ export default function Assessment() {
     }
   };
 
+  const handleReviewClick = () => {
+    if (answeredCount === QUESTIONS.length) {
+      setShowReview(true);
+    } else {
+      alert(`Por favor, responda todas as questões antes de revisar. Respondidas: ${answeredCount}/${QUESTIONS.length}`);
+    }
+  };
+
   const handleSubmit = async () => {
     if (answeredCount !== QUESTIONS.length) {
       alert("Por favor, responda todas as questões antes de enviar.");
       return;
+    }
+    
+    // Clear localStorage after successful submission
+    if (resolvedSessionId && resolvedAssessmentId) {
+      const assessmentKey = `assessment_${resolvedSessionId}_${resolvedAssessmentId}`;
+      localStorage.removeItem(assessmentKey);
     }
 
     if (!resolvedSessionId || !resolvedAssessmentId || !resolvedCompanyId) {
@@ -212,6 +273,25 @@ export default function Assessment() {
       setLoading(false);
     }
   };
+
+  // Show review screen if user clicked review
+  if (showReview && !isCompleted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <ReviewScreen
+            answers={answers}
+            onEdit={(questionId, answer) => {
+              setAnswers(prev => ({ ...prev, [questionId]: answer }));
+            }}
+            onBack={() => setShowReview(false)}
+            onSubmit={handleSubmit}
+            isLoading={loading}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (isCompleted && result) {
     return (
@@ -465,6 +545,24 @@ export default function Assessment() {
               </div>
 
               <div className="flex gap-2">
+                {currentQuestionIndex === QUESTIONS.length - 1 && (
+                  <Button
+                    onClick={handleReviewClick}
+                    variant="outline"
+                    className="bg-blue-50 border-blue-300"
+                  >
+                    📋 Revisar
+                  </Button>
+                )}
+                {autoSaveIndicator && (
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    autoSaveIndicator === 'saving' 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {autoSaveIndicator === 'saving' ? '💾 Salvando...' : '✓ Salvo'}
+                  </span>
+                )}
                 {currentQuestionIndex === QUESTIONS.length - 1 ? (
                   <Button
                     onClick={handleSubmit}
