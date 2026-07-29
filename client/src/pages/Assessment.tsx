@@ -54,6 +54,19 @@ export default function Assessment() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Prevent data loss on page unload if assessment is incomplete
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isCompleted && Object.keys(answers).length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isCompleted, answers]);
+
   // Get query parameters
   const [searchParams] = useState(() => {
     if (typeof window !== "undefined") {
@@ -399,17 +412,27 @@ export default function Assessment() {
                     onValueChange={handleAnswerChange}
                   >
                     <div className="space-y-3">
-                      {Object.entries(currentQuestion.options).map(([key, value]) => (
-                        <div key={key} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                          <RadioGroupItem value={key} id={`option-${key}`} />
-                          <Label
-                            htmlFor={`option-${key}`}
-                            className="flex-1 cursor-pointer text-gray-700"
+                      {Object.entries(currentQuestion.options).map(([key, value]) => {
+                        const isSelected = answers[currentQuestion.id] === key;
+                        return (
+                          <div 
+                            key={key} 
+                            className={`flex items-center space-x-3 p-3 border-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-blue-600 bg-blue-50 shadow-md' 
+                                : 'border-gray-200 hover:border-blue-300'
+                            }`}
                           >
-                            <span className="font-semibold text-blue-600">{key})</span> {value}
-                          </Label>
-                        </div>
-                      ))}
+                            <RadioGroupItem value={key} id={`option-${key}`} />
+                            <Label
+                              htmlFor={`option-${key}`}
+                              className="flex-1 cursor-pointer text-gray-700"
+                            >
+                              <span className="font-semibold text-blue-600">{key})</span> {value}
+                            </Label>
+                          </div>
+                        );
+                      })}
                     </div>
                   </RadioGroup>
                 </div>
@@ -417,14 +440,29 @@ export default function Assessment() {
             </Card>
 
             {/* Navigation Buttons */}
-            <div className="flex gap-4 justify-between">
-              <Button
-                variant="outline"
-                onClick={handlePreviousQuestion}
-                disabled={currentQuestionIndex === 0}
-              >
-                ← Anterior
-              </Button>
+            <div className="flex gap-4 justify-between items-center">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousQuestion}
+                  disabled={currentQuestionIndex === 0}
+                >
+                  ← Anterior
+                </Button>
+                {currentQuestionIndex > 0 && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 5))}
+                    className="text-xs"
+                    title="Voltar 5 questões"
+                  >
+                    ↺ Voltar 5
+                  </Button>
+                )}
+              </div>
+              <div className="text-sm text-gray-500">
+                Questão {currentQuestionIndex + 1} de {QUESTIONS.length}
+              </div>
 
               <div className="flex gap-2">
                 {currentQuestionIndex === QUESTIONS.length - 1 ? (

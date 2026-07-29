@@ -1078,3 +1078,13 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Aplicar animações de scroll aos cards de pontuação (animate-slide-in-up)
 - [x] Testar barra de progresso em diferentes tamanhos de tela
 - [x] Validar tooltips em dispositivos móveis - Todos os 216 testes passando
+
+
+## Proteção de Dados e Navegação
+
+- [x] Implementar alerta de confirmação ao sair com avaliação incompleta
+- [x] Adicionar beforeunload event listener para proteger contra fechamento acidental
+- [x] Adicionar destaque visual (borda colorida) no card selecionado - Borda azul e fundo azul claro
+- [x] Implementar botão "Voltar" para revisar respostas anteriores - Botão "Voltar 5"
+- [x] Permitir navegação entre questões com histórico de respostas
+- [x] Testar alerta em diferentes navegadores - Todos os 216 testes passando
