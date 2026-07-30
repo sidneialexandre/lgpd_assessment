@@ -17,6 +17,23 @@ export function ReviewScreen({ answers, onEdit, onBack, onSubmit, isLoading }: R
 
   const answeredQuestions = QUESTIONS.filter(q => answers[q.id]);
 
+  // Group questions by pillar
+  const groupedByPillar = QUESTIONS.reduce((acc, question) => {
+    const pillarName = question.pillar === 'security' ? 'Segurança' : 
+                       question.pillar === 'compliance' ? 'Conformidade' : 'Cultura';
+    if (!acc[pillarName]) {
+      acc[pillarName] = [];
+    }
+    acc[pillarName].push(question);
+    return acc;
+  }, {} as Record<string, typeof QUESTIONS>);
+
+  const pillarColors: Record<string, string> = {
+    'Segurança': 'from-blue-50 to-blue-100 border-blue-300',
+    'Conformidade': 'from-green-50 to-green-100 border-green-300',
+    'Cultura': 'from-purple-50 to-purple-100 border-purple-300'
+  };
+
   return (
     <div className="space-y-6">
       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
@@ -43,74 +60,85 @@ export function ReviewScreen({ answers, onEdit, onBack, onSubmit, isLoading }: R
         </CardContent>
       </Card>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {QUESTIONS.map((question) => {
-          const answer = answers[question.id];
-          const isExpanded = expandedQuestion === question.id;
+      {/* Grouped by Pillar */}
+      <div className="space-y-6">
+        {Object.entries(groupedByPillar).map(([pillarName, questions]) => {
+          const pillarAnswered = questions.filter(q => answers[q.id]).length;
+          const bgClass = pillarColors[pillarName] || 'from-gray-50 to-gray-100 border-gray-300';
           
           return (
-            <Card key={question.id} className={answer ? "border-blue-200 bg-blue-50" : "border-red-200 bg-red-50"}>
-              <button
-                onClick={() => setExpandedQuestion(isExpanded ? null : question.id)}
-                className="w-full text-left p-4 flex items-center justify-between hover:bg-opacity-75 transition-all"
-              >
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">
-                    {question.id}. {question.question}
-                  </p>
-                  {answer && (
-                    <p className="text-sm text-blue-700 mt-1">
-                      Resposta: <span className="font-bold">{answer}) {question.options[answer]}</span>
-                    </p>
-                  )}
-                  {!answer && (
-                    <p className="text-sm text-red-700 mt-1">Não respondida</p>
-                  )}
-                </div>
-                {isExpanded ? <ChevronUp /> : <ChevronDown />}
-              </button>
+            <Card key={pillarName} className={`bg-gradient-to-r ${bgClass}`}>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center justify-between">
+                  <span>{pillarName}</span>
+                  <span className="text-sm font-normal text-gray-600">
+                    {pillarAnswered}/{questions.length} respondidas
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {questions.map((question) => {
+                    const answer = answers[question.id];
+                    const isExpanded = expandedQuestion === question.id;
+                    
+                    if (!answer) return null;
 
-              {isExpanded && answer && (
-                <CardContent className="pt-0 pb-4">
-                  <div className="space-y-3 mt-4 border-t pt-4">
-                    <p className="text-sm text-gray-600">Alterar resposta:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {Object.entries(question.options).map(([key, value]: [string, string]) => (
-                        <Button
-                          key={key}
-                          onClick={() => {
-                            onEdit(question.id, key as 'A' | 'B' | 'C' | 'D');
-                            setExpandedQuestion(null);
-                          }}
-                          variant={answer === key ? "default" : "outline"}
-                          className="text-xs"
+                    return (
+                      <Card key={question.id} className="bg-white">
+                        <div
+                          className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={() => setExpandedQuestion(isExpanded ? null : question.id)}
                         >
-                          {key}) {value}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              )}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{question.question}</p>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Resposta: <span className="font-semibold">{question.options[answer as keyof typeof question.options]}</span>
+                              </p>
+                            </div>
+                            {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </div>
+
+                          {isExpanded && (
+                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                              {Object.entries(question.options).map(([key, value]: [string, string]) => (
+                                <Button
+                                  key={key}
+                                  onClick={() => {
+                                    onEdit(question.id, key as 'A' | 'B' | 'C' | 'D');
+                                    setExpandedQuestion(null);
+                                  }}
+                                  variant={answer === key ? "default" : "outline"}
+                                  className="text-xs w-full justify-start"
+                                >
+                                  {key}) {value}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
             </Card>
           );
         })}
       </div>
 
-      <div className="flex gap-4 justify-between sticky bottom-0 bg-white p-4 rounded-lg border">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          disabled={isLoading}
-        >
+      {/* Action Buttons */}
+      <div className="flex gap-3 sticky bottom-0 bg-white p-4 rounded-lg border border-gray-200">
+        <Button onClick={onBack} variant="outline" className="flex-1">
           ← Voltar
         </Button>
-        <Button
-          onClick={onSubmit}
-          disabled={isLoading || answeredQuestions.length !== QUESTIONS.length}
-          className="bg-green-600 hover:bg-green-700"
+        <Button 
+          onClick={onSubmit} 
+          disabled={isLoading || answeredQuestions.length === 0}
+          className="flex-1 bg-blue-600 hover:bg-blue-700"
         >
-          {isLoading ? "Enviando..." : "✓ Enviar Avaliação"}
+          {isLoading ? 'Enviando...' : '✓ Enviar Avaliação'}
         </Button>
       </div>
     </div>

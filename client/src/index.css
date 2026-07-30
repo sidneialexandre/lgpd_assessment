@@ -240,3 +240,40 @@
     animation-delay: 2s;
   }
 }
+
+/* Progress Bar Animation */
+@keyframes progressFill {
+  from {
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+  }
+  to {
+    width: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+  }
+}
+
+.progress-bar-animated {
+  animation: progressFill 0.8s ease-out forwards;
+  transition: all 0.5s ease-out;
+}
+
+.progress-bar-container {
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+  height: 8px;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.6s ease-out;
+}
+
+/* Color gradient based on progress */
+.progress-0-25 { background: linear-gradient(90deg, #ef4444, #f97316); }
+.progress-25-50 { background: linear-gradient(90deg, #f97316, #eab308); }
+.progress-50-75 { background: linear-gradient(90deg, #eab308, #84cc16); }
+.progress-75-100 { background: linear-gradient(90deg, #84cc16, #10b981); }

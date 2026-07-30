@@ -406,7 +406,33 @@ export default function Assessment() {
                     {answeredCount} respondidas
                   </span>
                 </div>
-                <Progress value={progressPercentage} className="h-2" />
+                <div className="progress-bar-container">
+                  <div 
+                    className="progress-bar-fill"
+                    style={{ 
+                      width: `${progressPercentage}%`,
+                      background: progressPercentage < 25 ? 'linear-gradient(90deg, #ef4444, #f97316)' :
+                                 progressPercentage < 50 ? 'linear-gradient(90deg, #f97316, #eab308)' :
+                                 progressPercentage < 75 ? 'linear-gradient(90deg, #eab308, #84cc16)' :
+                                 'linear-gradient(90deg, #84cc16, #10b981)'
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">{Math.round(progressPercentage)}% concluído</p>
+              </div>
+              
+              {/* Save and Continue Later Button */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    localStorage.setItem(`assessment_${currentSession?.id}`, JSON.stringify(answers));
+                    window.location.href = '/';
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  💾 Salvar e continuar depois
+                </Button>
               </div>
             </div>
           </CardContent>
