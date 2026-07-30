@@ -10,7 +10,7 @@ import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { ProgressBar } from "@/components/ProgressBar";
+
 import { ReviewScreen } from "@/components/ReviewScreen";
 
 // Function to get colors based on pillar name
@@ -385,15 +385,7 @@ export default function Assessment() {
           </Card>
         )}
 
-        {/* Progress Bar - Fixed at top */}
-        <div className="fixed top-0 left-0 right-0 bg-white shadow-md z-50 py-3 px-4">
-          <div className="max-w-4xl mx-auto">
-            <ProgressBar current={currentQuestionIndex + 1} total={QUESTIONS.length} />
-          </div>
-        </div>
 
-        {/* Add padding to account for fixed progress bar */}
-        <div className="pt-24"></div>
 
         {/* Progress Card */}
         <Card className="mb-8 bg-white shadow-lg">
