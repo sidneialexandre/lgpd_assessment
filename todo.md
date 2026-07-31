@@ -1112,3 +1112,16 @@ Aplicação pronta para publicação com PDF corrigido
 - [x] Agrupar respostas por departamento na tela de revisão - Cards por pilar
 - [x] Adicionar indicador visual de progresso por pilar - Contador X/Y respondidas
 - [x] Testar agrupamento em diferentes tamanhos de tela - Todos os 216 testes passando
+
+
+## Revisão de Questões conforme ISO/IEC 27701:2025
+
+- [x] Pesquisar e documentar requisitos da ISO/IEC 27701:2025
+- [x] Mapear as 50 questões atuais para os requisitos da ISO 27701
+- [x] Reescrever as 50 questões conforme ISO 27701:2025 com:
+  - **Segurança da Informação (17 questões)**: Criptografia, Controle de Acesso, Autenticação, Auditoria, Gestão de Vulnerabilidades, Resposta a Incidentes, Backup, Proteção contra Malware, Treinamento, IAM, Segmentação de Rede, Gestão de Chaves, Avaliação de Risco, Inteligência de Ameaças, Proteção DDoS
+  - **Conformidade Legal (18 questões)**: Consentimento, Direito de Acesso, Retificação, Exclusão, Portabilidade, Notificação de Violações, DPIA, Transferências Internacionais, Registros de Processamento, DPA, Privacidade por Design, Retenção de Dados, Dados Sensíveis, Dados de Crianças, Transparência, Conformidade GDPR/LGPD/CCPA/PDPA, Processamento Automatizado, Proteção de IA
+  - **Governança e Cultura (15 questões)**: Liderança Executiva, DPO, Políticas, Treinamento, Integração em Processos, Avaliação de Risco, Gestão de Fornecedores, Whistleblowing, Melhoria Contínua, Comunicação, Accountability, Auditorias, Relacionamento com Reguladores, Privacidade como Diferencial, Conformidade ISO 27701
+- [x] Todos os 216 testes passando
+- [x] Build sem erros
+- [x] Questões agora refletem melhores práticas internacionais de privacidade e proteção de dados
